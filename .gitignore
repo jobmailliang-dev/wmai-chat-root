@@ -1,0 +1,30 @@
+# =====================
+# 根目录 .gitignore
+# =====================
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS 文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# MCP 和工具配置
+.playwright-mcp/
+.claude/
+.zcf/
+.spec-workflow/
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*~
