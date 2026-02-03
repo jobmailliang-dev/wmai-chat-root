@@ -47,7 +47,7 @@ class LLMClient:
 
     def _chat_with_tools(self, user_message: str) -> str:
         """带工具调用的对话。"""
-        from src.cli.output import print_message_before, print_message, print_tool_call, print_tool_result, print_tool_error
+        from src.cli.output import print_message_before, print_message, print_tool_call, print_tool_result, print_tool_error,print_error
 
         registry = get_registry()
         tool_schemas = registry.get_all_schemas()
