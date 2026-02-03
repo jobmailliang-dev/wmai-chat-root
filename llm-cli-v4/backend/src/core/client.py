@@ -74,7 +74,7 @@ class LLMClient:
                 if isinstance(response, dict) and response.get('tool_calls'):
                     tool_calls = response['tool_calls']
                     assistant_content = response.get('content', '')
-                    print(f"============={assistant_content}")
+                    print(f"> {assistant_content}")
                     if iteration == 1 and assistant_content:
                         print_message_before(assistant_content)
 

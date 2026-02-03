@@ -56,6 +56,7 @@ class CLIInterface:
     def print_welcome(self) -> None:
         """打印欢迎信息。"""
         print_welcome("LLM CLI v2", self.exit_command)
+        print("提示：Ctrl+Enter 换行，Enter 发送，Ctrl+C 退出")
 
 
 def create_cli(config: AppConfig) -> CLIInterface:

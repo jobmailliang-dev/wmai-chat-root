@@ -89,7 +89,7 @@ class ToolRegistry:
     def print_tool_call(self, iteration: int, name: str, args: Dict[str, Any]) -> None:
         """打印工具调用信息。"""
         args_str = str(args)
-        max_len = 150
+        max_len = 1000
         if len(args_str) > max_len:
             args_str = args_str[:max_len] + "..."
 

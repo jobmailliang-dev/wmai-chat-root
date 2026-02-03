@@ -55,6 +55,7 @@ class BashTool(BaseTool):
                 shell=True,
                 capture_output=True,
                 text=True,
+                encoding='utf-8',  # 解决 Windows 编码问题
                 timeout=timeout,
             )
 
