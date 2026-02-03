@@ -96,7 +96,7 @@ class ToolRegistry:
         print(f"\n{self._GRAY}[Tool Call #{iteration}] {self._RESET}"
               f"{self._GRAY}{name} {self._RESET}with args: {self._GRAY}{args_str}{self._RESET}")
 
-    def print_tool_result(self, name: str, result: str, max_len: int = 200) -> None:
+    def print_tool_result(self, name: str, result: str, max_len: int = 500) -> None:
         """打印工具执行结果。"""
         result_str = str(result)
         if len(result_str) > max_len:

@@ -1,7 +1,7 @@
 ---
 name: workstation
-description: 获取工位相关基础信息
-argument-hint: time=查询时间 workstationName=工位名称
+description: 获取工位基础数据
+argument-hint: time=查询时间(非必填) workstationName=工位名称(非必填)
 when_to_use:  machine
 ---
 
@@ -9,14 +9,20 @@ when_to_use:  machine
 
 ## Overview
 
-指导文件可以帮助你在时间{time}内查询工位{workstationName}数据
+指导文件可以帮助你查询时间{time}内工位{workstationName}数据
 
 
 ### 工位查询分页
+- current: 当前页码(默认1)
+- size: 分页大小(默认15)
 ```bash
-curl "http://192.168.3.100/api/blade-cps/workstation/pc-page?current=2&size=15&groupId=1&orderField=" ^
--H "Accept: application/json, text/plain, */*" ^
--H "Accept-Encoding: gzip, deflate" ^
--H "Accept-Language: zh-CN" ^
--H "Authorization: Basic c2FiZXI6c2FiZXJfc2VjcmV0" --insecure
+curl ^"{cps_base_url}/blade-cps/workstation/pc-page?current=1^&size=15^&groupId=1^&orderField=^" ^
+  -H ^"Accept: application/json, text/plain, */*^" ^
+  -H ^"Accept-Language: zh-CN^" ^
+  -H ^"Authorization: {cps_authorization}^" ^
+  -H ^"Blade-Auth: {cps_blade_token}^" ^
+  -H ^"Content-Type: application/json^" ^
+  --data-raw ^"^{^\^"keyWord^\^":^\^"^\^",^\^"type^\^":^\^"^\^",^\^"status^\^":^\^"1^\^",^\^"undefined^\^":^\^"^\^",^\^"filter^\^":^[^]^}^" ^
+  --insecure
 ```
+

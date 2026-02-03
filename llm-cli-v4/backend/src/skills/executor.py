@@ -6,6 +6,7 @@
 import re
 from typing import Any, Dict, List, Optional
 
+from src.config.loader import load_config
 from src.skills.loader import SkillLoader, SkillLoadError
 from src.skills.parser import Skill
 
@@ -21,6 +22,7 @@ class SkillExecutor:
         """
         self.loader = loader or SkillLoader()
         self._skill_cache: Dict[str, Skill] = {}
+        self._system_metadata: Optional[Dict[str, str]] = None
 
     def execute(self, skill_name: str, args: Dict[str, Any] = None) -> str:
         """执行技能。
@@ -64,14 +66,27 @@ class SkillExecutor:
         except SkillLoadError:
             return None
 
+    def _get_system_metadata(self) -> Dict[str, str]:
+        """获取系统元数据（懒加载）。"""
+        if self._system_metadata is None:
+            try:
+                config = load_config()
+                self._system_metadata = config.get_system_metadata_dict()
+            except Exception:
+                self._system_metadata = {}
+        return self._system_metadata
+
     def _format_content(self, skill: Skill, args: Dict[str, Any]) -> str:
         """格式化技能内容，替换占位符。"""
         content = skill.content
 
+        # 合并系统元数据与用户参数，用户参数优先级更高
+        merged_args = {**self._get_system_metadata(), **args}
+
         # 替换 {xxx} 占位符
         def replacer(match):
             key = match.group(1)
-            return str(args.get(key, match.group(0)))
+            return str(merged_args.get(key, match.group(0)))
 
         content = re.sub(r'\{(\w+)\}', replacer, content)
 
