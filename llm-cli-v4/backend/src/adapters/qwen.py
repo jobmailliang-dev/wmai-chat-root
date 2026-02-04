@@ -89,7 +89,11 @@ class QwenClientAdapter(LLMAdapter):
         """流式调用 Qwen API。
 
         Qwen 的流式响应包含 reasoning_content（思考过程）和 content（最终回答）。
+        工具调用的 arguments 是增量返回的，需要按 index 拼接。
         """
+        # 用于增量拼接工具调用参数
+        tool_calls_buffer: Dict[int, Dict] = {}
+
         try:
             request_params = {
                 "model": self.model,
@@ -124,20 +128,25 @@ class QwenClientAdapter(LLMAdapter):
                     if delta.content:
                         yield {"content": delta.content}
 
-                    # 工具调用
+                    # 工具调用 - 需要增量拼接参数
                     if delta.tool_calls:
                         for tc in delta.tool_calls:
-                            yield {
-                                "tool_calls": [
-                                    {
-                                        "id": tc.id,
-                                        "function": {
-                                            "name": tc.function.name,
-                                            "arguments": tc.function.arguments or "",
-                                        },
-                                    }
-                                ]
-                            }
+                            index = tc.index
+                            if index not in tool_calls_buffer:
+                                tool_calls_buffer[index] = {
+                                    "id": tc.id,
+                                    "function": {
+                                        "name": tc.function.name,
+                                        "arguments": "",
+                                    },
+                                }
+                            # 增量拼接 arguments
+                            if tc.function.arguments:
+                                tool_calls_buffer[index]["function"]["arguments"] += tc.function.arguments
+
+            # 发送所有缓冲的工具调用
+            for index in sorted(tool_calls_buffer.keys()):
+                yield {"tool_calls": [tool_calls_buffer[index]]}
 
         except Exception as e:
             raise ConnectionError(f"Qwen API call failed: {str(e)}")

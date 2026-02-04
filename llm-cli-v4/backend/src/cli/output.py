@@ -42,14 +42,15 @@ def print_welcome(title: str = "LLM CLI", exit_cmd: str = "exit") -> None:
 
 
 def print_thinking(content: str = "正在思考...") -> None:
-    """在实时输出前打印状态信息（用于 CLI 打字机效果）。"""
+    """在实时输出前打印状态信息（用于 CLI 打字机效果），灰色显示。"""
     _trigger_event(EVENT_THINKING, {"content": content})
-    print(content, end="", flush=True)
+    print(f"\x1b[90m{content}\x1b[0m", end="", flush=True)
 
 
 def print_message(content: str) -> None:
     """打印消息。"""
     _trigger_event(EVENT_CONTENT, {"content": content})
+    print("=========content")
     print(content)
 
 

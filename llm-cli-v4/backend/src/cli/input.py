@@ -22,12 +22,46 @@ def _is_chinese_char(char: str) -> bool:
             0x3000 <= code <= 0x303F)
 
 
-def _delete_last_char(s: str) -> tuple[str, str]:
-    """删除字符串最后一个字符，返回 (新字符串, 删除的字符)。"""
-    if not s:
-        return s, ""
-    last_char = s[-1]
-    return s[:-1], last_char
+def _getch_windows() -> str:
+    """Windows 平台读取单个字符（支持 UTF-8 多字节字符）。"""
+    import msvcrt
+
+    first_byte = msvcrt.getwch()
+
+    # ASCII 控制字符
+    if first_byte in ("\x00", "\xe0"):
+        # 功能键前缀，返回功能键标记
+        return first_byte
+
+    # 检查是否为 UTF-8 多字节字符的首字节
+    # UTF-8 编码规则：
+    # 1110xxxx 10xxxxxx 10xxxxxx (3 字节，中文等)
+    # 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx (4 字节)
+    first_ord = ord(first_byte)
+    if first_ord >= 0x80:
+        # 多字节字符，需要读取剩余字节
+        bytes_list = [first_byte]
+        # 计算需要读取的剩余字节数
+        if (first_ord & 0xE0) == 0xC0:
+            # 2 字节字符
+            remaining = 1
+        elif (first_ord & 0xF0) == 0xE0:
+            # 3 字节字符（中文等）
+            remaining = 2
+        elif (first_ord & 0xF8) == 0xF0:
+            # 4 字节字符
+            remaining = 3
+        else:
+            # 未知编码，作为单字节处理
+            return first_byte
+
+        # 读取剩余字节
+        for _ in range(remaining):
+            bytes_list.append(msvcrt.getwch())
+
+        return "".join(bytes_list)
+
+    return first_byte
 
 
 def get_input(prompt: str = "") -> str:
@@ -70,7 +104,7 @@ def _get_input_windows(prompt: str) -> str:
     while True:
         line = ""
         while True:
-            char = msvcrt.getwch()
+            char = _getch_windows()
             # 处理 Ctrl+C
             if char == "\x03":
                 raise KeyboardInterrupt
@@ -81,11 +115,14 @@ def _get_input_windows(prompt: str) -> str:
                 break
             elif char == "\x08":  # Backspace
                 if line:
-                    line, deleted_char = _delete_last_char(line)
-                    # 中文字符占 2 个显示宽度，需要退格 2 次
-                    if deleted_char and _is_chinese_char(deleted_char):
+                    line = line[:-1]
+                    # 计算需要清除的显示宽度
+                    last_char = line[-1] if line else ""
+                    if _is_chinese_char(last_char):
+                        # 中文字符占 2 个显示宽度：退格-覆盖-退格-覆盖-退格
                         sys.stdout.write("\x08 \x08 \x08")
                     else:
+                        # 英文字符占 1 个显示宽度：退格-覆盖-退格
                         sys.stdout.write("\x08 \x08")
                     sys.stdout.flush()
             elif char == "\x03":  # Ctrl+C
@@ -100,7 +137,7 @@ def _get_input_windows(prompt: str) -> str:
                         data = ctypes.windll.user32.GetClipboardData(CF_UNICODETEXT)
                         text = ctypes.windll.kernel32.GlobalLock(data)
                         if isinstance(text, int):
-                            text = ctypes.windll.kernel32.GlobalUnlock(data)
+                            text = ctypes.windll.user32.GlobalUnlock(data)
                         else:
                             text = str(text)
                         ctypes.windll.user32.CloseClipboard()
