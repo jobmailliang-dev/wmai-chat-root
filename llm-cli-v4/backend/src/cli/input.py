@@ -11,6 +11,25 @@ import os
 IS_WINDOWS = sys.platform == "win32"
 
 
+def _is_chinese_char(char: str) -> bool:
+    """检查字符是否为中文字符（包括中文标点）。"""
+    code = ord(char)
+    # 中文基本汉字: 4E00-9FFF
+    # 中文扩展A: 3400-4DBF
+    # 中文标点: 3000-303F
+    return (0x4E00 <= code <= 0x9FFF or
+            0x3400 <= code <= 0x4DBF or
+            0x3000 <= code <= 0x303F)
+
+
+def _delete_last_char(s: str) -> tuple[str, str]:
+    """删除字符串最后一个字符，返回 (新字符串, 删除的字符)。"""
+    if not s:
+        return s, ""
+    last_char = s[-1]
+    return s[:-1], last_char
+
+
 def get_input(prompt: str = "") -> str:
     """获取用户输入，支持多行输入。
 
@@ -62,8 +81,12 @@ def _get_input_windows(prompt: str) -> str:
                 break
             elif char == "\x08":  # Backspace
                 if line:
-                    line = line[:-1]
-                    sys.stdout.write("\x08 \x08")
+                    line, deleted_char = _delete_last_char(line)
+                    # 中文字符占 2 个显示宽度，需要退格 2 次
+                    if deleted_char and _is_chinese_char(deleted_char):
+                        sys.stdout.write("\x08 \x08 \x08")
+                    else:
+                        sys.stdout.write("\x08 \x08")
                     sys.stdout.flush()
             elif char == "\x03":  # Ctrl+C
                 raise KeyboardInterrupt
