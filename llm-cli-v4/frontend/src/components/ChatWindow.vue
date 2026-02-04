@@ -25,7 +25,7 @@ import MessageList from './MessageList.vue';
 import ChatInput from './ChatInput.vue';
 import { useChat } from '../hooks/useChat';
 
-const baseUrl = 'http://localhost:8000';
+const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const { messages, state, streamMessage, clearMessages } = useChat(baseUrl);
 
 const handleSend = async (message: string) => {
