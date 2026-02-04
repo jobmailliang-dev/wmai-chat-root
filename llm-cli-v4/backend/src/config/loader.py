@@ -14,6 +14,7 @@ from src.config.models import (
     ToolsConfig,
     CLIConfig,
     SystemMetadata,
+    SkillMetadata,
 )
 
 
@@ -58,12 +59,14 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
     tools_config = _parse_tools_config(raw_config.get('tools', {}))
     cli_config = _parse_cli_config(raw_config.get('cli', {}))
     system_metadata = _parse_system_metadata(raw_config.get('system_metadata', {}))
+    skill_metadata = _parse_skill_metadata(raw_config.get('skill_metadata', {}))
 
     return AppConfig(
         openai=openai_config,
         tools=tools_config,
         cli=cli_config,
         system_metadata=system_metadata,
+        skill_metadata=skill_metadata,
     )
 
 
@@ -76,6 +79,7 @@ def _parse_openai_config(raw: dict) -> OpenAIConfig:
         max_tokens=raw.get('max_tokens', 1000),
         temperature=raw.get('temperature', 0.7),
         system_message=raw.get('system_message', 'You are a helpful assistant.'),
+        use_stream=raw.get('use_stream', False),
     )
 
 
@@ -105,3 +109,12 @@ def _parse_system_metadata(raw: dict) -> Optional[SystemMetadata]:
     # 过滤 None 值，只保留有效的配置项
     extra = {k: v for k, v in raw.items() if v is not None}
     return SystemMetadata(extra=extra)
+
+
+def _parse_skill_metadata(raw: dict) -> Optional[SkillMetadata]:
+    """解析技能元数据，支持任意参数。"""
+    if not raw:
+        return None
+    # 过滤 None 值，只保留有效的配置项
+    extra = {k: v for k, v in raw.items() if v is not None}
+    return SkillMetadata(extra=extra)
