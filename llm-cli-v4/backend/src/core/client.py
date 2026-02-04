@@ -68,7 +68,7 @@ class LLMClient:
             messages = self.session.get_messages()
 
             try:
-                response = self.adapter.complete(messages=messages, tools=available_schemas)
+                response = self.adapter.complete_auto(messages=messages, tools=available_schemas)
 
                 # 处理工具调用响应
                 if isinstance(response, dict) and response.get('tool_calls'):
