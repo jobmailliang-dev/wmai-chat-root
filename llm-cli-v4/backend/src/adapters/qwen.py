@@ -47,7 +47,8 @@ class QwenClientAdapter(LLMAdapter):
             # Qwen 扩展参数
             if self.enable_thinking:
                 request_params["extra_body"] = {
-                    "think": True
+                    "enable_thinking": True,
+                    "thinking_budget": self.thinking_budget
                 }
 
             # 只有当工具列表非空时才传递 tools 参数
@@ -106,7 +107,8 @@ class QwenClientAdapter(LLMAdapter):
             # Qwen 扩展参数
             if self.enable_thinking:
                 request_params["extra_body"] = {
-                    "think": True
+                    "enable_thinking": True,
+                    "thinking_budget": self.thinking_budget
                 }
 
             # 只有当工具列表非空时才传递 tools 参数
@@ -119,9 +121,12 @@ class QwenClientAdapter(LLMAdapter):
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
 
+
                     # Qwen 思考过程内容
                     if hasattr(delta, "reasoning_content") and delta.reasoning_content:
                         yield {"reasoning_content": delta.reasoning_content}
+                    elif hasattr(delta, "reasoning") and delta.reasoning:
+                        yield {"reasoning_content": delta.reasoning}
 
                     # 最终回答内容
                     if delta.content:
@@ -174,7 +179,7 @@ class QwenClientAdapter(LLMAdapter):
                     tool_calls.extend(chunk["tool_calls"])
 
             if reasoning_content:
-                print("=========有思考reasoning_content")
+                print(f"=========有思考reasoning_content{reasoning_content}")
             # 拼接思考过程和最终回答
             if reasoning_content and full_content:
                 combined_content = f"{reasoning_content}\n\n{full_content}"
