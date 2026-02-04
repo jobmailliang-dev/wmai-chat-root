@@ -182,8 +182,6 @@ class LLMClient:
 					response_text = response if isinstance(response, str) else ""
 					if not response_text and isinstance(response, dict):
 						response_text = response.get('content', '')
-					print("======message")
-					print_message(response_text)
 
 					final_response = response_text
 					self.session.add_assistant(final_response)

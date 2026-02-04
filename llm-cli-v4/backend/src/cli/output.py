@@ -50,7 +50,6 @@ def print_thinking(content: str = "正在思考...") -> None:
 def print_message(content: str) -> None:
     """打印消息。"""
     _trigger_event(EVENT_CONTENT, {"content": content})
-    print("=========content")
     print(content)
 
 

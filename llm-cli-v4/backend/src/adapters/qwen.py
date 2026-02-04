@@ -47,8 +47,7 @@ class QwenClientAdapter(LLMAdapter):
             # Qwen 扩展参数
             if self.enable_thinking:
                 request_params["extra_body"] = {
-                    "enable_thinking": True,
-                    "thinking_budget": self.thinking_budget,
+                    "think": True
                 }
 
             # 只有当工具列表非空时才传递 tools 参数
@@ -101,13 +100,13 @@ class QwenClientAdapter(LLMAdapter):
                 "max_tokens": kwargs.get("max_tokens", self.max_tokens),
                 "temperature": kwargs.get("temperature", self.temperature),
                 "stream": True,
+
             }
 
             # Qwen 扩展参数
             if self.enable_thinking:
                 request_params["extra_body"] = {
-                    "enable_thinking": True,
-                    "thinking_budget": self.thinking_budget,
+                    "think": True
                 }
 
             # 只有当工具列表非空时才传递 tools 参数
@@ -174,6 +173,8 @@ class QwenClientAdapter(LLMAdapter):
                 if chunk.get("tool_calls"):
                     tool_calls.extend(chunk["tool_calls"])
 
+            if reasoning_content:
+                print("=========有思考reasoning_content")
             # 拼接思考过程和最终回答
             if reasoning_content and full_content:
                 combined_content = f"{reasoning_content}\n\n{full_content}"
