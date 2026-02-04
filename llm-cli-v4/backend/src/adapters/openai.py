@@ -23,6 +23,7 @@ class OpenAIClientAdapter(LLMAdapter):
         self.model = config.model
         self.max_tokens = config.max_tokens
         self.temperature = config.temperature
+        self.use_stream = config.use_stream
 
     def complete(
         self,
@@ -123,3 +124,30 @@ class OpenAIClientAdapter(LLMAdapter):
 
         except Exception as e:
             raise ConnectionError(f"API call failed: {str(e)}")
+
+    def complete_auto(
+        self,
+        messages: List[Dict[str, str]],
+        tools: List[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> str:
+        """根据配置自动选择流式或非流式调用。
+
+        流式模式下会在内部聚合所有 chunk 后返回统一格式。
+        """
+        if self.use_stream:
+            # 流式调用：聚合所有 chunk 后返回
+            full_content = ""
+            tool_calls = []
+
+            for chunk in self.complete_stream(messages, tools, **kwargs):
+                if chunk.get("content"):
+                    full_content += chunk["content"]
+                if chunk.get("tool_calls"):
+                    tool_calls.extend(chunk["tool_calls"])
+
+            if tool_calls:
+                return {"content": full_content or "", "tool_calls": tool_calls}
+            return full_content
+        else:
+            return self.complete(messages, tools, **kwargs)

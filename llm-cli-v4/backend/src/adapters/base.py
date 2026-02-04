@@ -47,3 +47,22 @@ class LLMAdapter(ABC):
             包含内容块或工具调用的字典
         """
         pass
+
+    @abstractmethod
+    def complete_auto(
+        self,
+        messages: List[Dict[str, str]],
+        tools: List[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> str:
+        """根据配置自动选择流式或非流式调用。
+
+        Args:
+            messages: 消息列表
+            tools: 工具定义列表
+            **kwargs: 其他参数（temperature, max_tokens 等）
+
+        Returns:
+            AI 回复内容（字符串或包含 tool_calls 的字典）
+        """
+        pass
