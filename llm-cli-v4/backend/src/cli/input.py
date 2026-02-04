@@ -107,11 +107,13 @@ def _get_input_windows(prompt: str) -> str:
                 sys.stdout.flush()
 
         # Enter 发送（如果当前行或之前有内容）
+
         if not line and not lines:
             return ""
         if not line:
             break
         lines.append(line)
+        break  # 立即发送，不等待再次 Enter
 
     return "\n".join(lines).rstrip("\n")
 
