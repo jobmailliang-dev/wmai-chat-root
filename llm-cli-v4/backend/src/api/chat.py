@@ -86,6 +86,8 @@ def get_client() -> LLMClient:
         _client = LLMClient(
             openai_config=config.openai,
             tools_config=config.tools,
+            llm_provider=config.llm_provider,
+            qwen_config=config.qwen,
         )
     return _client
 

@@ -22,6 +22,8 @@ class CLIInterface:
             openai_config=config.openai,
             tools_config=config.tools,
             metadata=config.get_system_metadata_dict(),
+            llm_provider=config.llm_provider,
+            qwen_config=config.qwen,
         )
         self.user_prefix = config.cli.user_prefix
         self.ai_prefix = config.cli.ai_prefix

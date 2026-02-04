@@ -4,10 +4,12 @@
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+
+from src.config.models import OpenAIConfig, QwenConfig, ToolsConfig
 
 from src.adapters.base import LLMAdapter
-from src.config.models import OpenAIConfig, ToolsConfig
+from src.config.models import OpenAIConfig, QwenConfig, ToolsConfig
 from src.core.session import SessionManager
 from src.tools.registry import get_registry
 
@@ -17,24 +19,41 @@ class LLMClient:
 
     def __init__(
         self,
-        openai_config: OpenAIConfig,
-        tools_config: ToolsConfig,
+        openai_config: Optional[OpenAIConfig] = None,
+        tools_config: Optional[ToolsConfig] = None,
         metadata: Dict[str, str] = None,
         adapter: LLMAdapter = None,
+        llm_provider: str = "openai",
+        qwen_config: Optional[QwenConfig] = None,
     ):
-        """初始化客户端。"""
-        self.config = openai_config
+        """初始化客户端。
+
+        Args:
+            openai_config: OpenAI 配置
+            tools_config: 工具配置
+            metadata: 元数据
+            adapter: 自定义适配器（优先级最高）
+            llm_provider: LLM 提供商名称
+            qwen_config: Qwen 配置
+        """
         self.tools_config = tools_config
         self.metadata = metadata or {}
 
         # 初始化适配器
-        if adapter is None:
+        if adapter is not None:
+            self.adapter = adapter
+        elif llm_provider == "qwen" and qwen_config is not None:
+            from src.adapters.qwen import QwenClientAdapter
+            self.adapter = QwenClientAdapter(qwen_config)
+            self.config = qwen_config
+        else:
             from src.adapters.openai import OpenAIClientAdapter
-            adapter = OpenAIClientAdapter(openai_config)
-        self.adapter = adapter
+            self.adapter = OpenAIClientAdapter(openai_config)
+            self.config = openai_config
 
         # 初始化会话
-        self.session = SessionManager(openai_config.system_message, self.metadata)
+        system_message = getattr(self.config, 'system_message', 'You are a helpful assistant.')
+        self.session = SessionManager(system_message, self.metadata)
 
         # 工具配置
         self.allowed_tools = set(tools_config.allowed_tools) if tools_config.allowed_tools else set()

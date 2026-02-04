@@ -4,5 +4,6 @@
 """
 
 from src.adapters.openai import OpenAIClientAdapter
+from src.adapters.qwen import QwenClientAdapter
 
-__all__ = ['OpenAIClientAdapter']
+__all__ = ['OpenAIClientAdapter', 'QwenClientAdapter']

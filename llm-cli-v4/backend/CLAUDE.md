@@ -43,7 +43,7 @@ flake8 src/            # 代码检查
 
 ### SSE 事件
 
-`content`, `tool_call`, `tool_result`, `tool_error`, `thinking`, `done`, `error`
+`content`, `tool_call`, `tool_result`, `tool_error`, `thinking`, `reasoning`, `done`, `error`
 
 ## 架构概览
 
@@ -63,7 +63,9 @@ src/
 │   ├── executor.py       # 技能执行器
 │   └── loader.py         # 技能加载器（支持 YAML frontmatter）
 ├── adapters/
-│   └── openai.py         # OpenAI 兼容 API 适配器
+│   ├── base.py           # LLM 适配器基类
+│   ├── openai.py         # OpenAI 兼容 API 适配器
+│   └── qwen.py           # Qwen API 适配器
 ├── config/
 │   ├── loader.py         # YAML 配置加载
 │   └── models.py         # 配置模型
@@ -83,15 +85,39 @@ src/
 2. 包含 YAML frontmatter（name, description, license）
 3. 使用 `{placeholder}` 占位符支持变量替换
 
+## 添加新 LLM 适配器
+
+1. 在 `src/adapters/` 创建适配器文件，如 `xxx.py`
+2. 继承 `LLMAdapter` 抽象基类
+3. 实现 `complete()`, `complete_stream()`, `complete_auto()` 方法
+4. 在 `src/adapters/__init__.py` 中导出
+5. 在 `src/config/models.py` 添加配置模型（如 `XxxConfig`）
+6. 在 `src/config/loader.py` 添加解析函数
+7. 在 `src/config/models.py` 的 `AppConfig` 中添加配置字段
+8. 更新 `LLMClient.__init__()` 支持新的提供商
+
 ## 配置
 
 主配置文件位于项目根目录 `config.yaml`：
 
 ```yaml
+# LLM 提供商配置
+llm:
+  provider: qwen  # 可选: openai, qwen
+
+# OpenAI API 配置（备选）
 openai:
   api_url: "https://api.openai.com/v1"
   api_key: "your-api-key"
   model: "gpt-3.5-turbo"
+
+# Qwen API 配置
+qwen:
+  api_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  api_key: "your-api-key"
+  model: "qwen3-14b"
+  enable_thinking: false  # 启用思考模式
+  thinking_budget: 4000  # 思考预算
 
 tools:
   allowed_tools: [bash, calculator, datetime, read_file, skill]

@@ -20,6 +20,20 @@ class OpenAIConfig:
 
 
 @dataclass
+class QwenConfig:
+    """Qwen API 配置。"""
+    api_url: str
+    api_key: str
+    model: str
+    max_tokens: int = 1000
+    temperature: float = 0.7
+    system_message: str = "You are a helpful assistant."
+    use_stream: bool = True
+    enable_thinking: bool = False
+    thinking_budget: int = 4000
+
+
+@dataclass
 class ToolsConfig:
     """工具系统配置。"""
     allowed_tools: List[str] = field(default_factory=list)
@@ -59,9 +73,11 @@ class SkillMetadata:
 @dataclass
 class AppConfig:
     """应用完整配置。"""
-    openai: OpenAIConfig
-    tools: ToolsConfig
-    cli: CLIConfig
+    llm_provider: str = "openai"
+    openai: Optional[OpenAIConfig] = None
+    qwen: Optional[QwenConfig] = None
+    tools: Optional[ToolsConfig] = None
+    cli: Optional[CLIConfig] = None
     system_metadata: Optional[SystemMetadata] = None
     skill_metadata: Optional[SkillMetadata] = None
 

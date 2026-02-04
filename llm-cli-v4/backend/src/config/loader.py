@@ -11,6 +11,7 @@ import yaml
 from src.config.models import (
     AppConfig,
     OpenAIConfig,
+    QwenConfig,
     ToolsConfig,
     CLIConfig,
     SystemMetadata,
@@ -54,15 +55,21 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
     except yaml.YAMLError as e:
         raise ConfigurationError(f"Invalid YAML format: {e}")
 
+    # 解析 LLM provider 配置
+    llm_provider = raw_config.get('llm', {}).get('provider', 'openai')
+
     # 解析各配置部分
     openai_config = _parse_openai_config(raw_config.get('openai', {}))
+    qwen_config = _parse_qwen_config(raw_config.get('qwen', {}))
     tools_config = _parse_tools_config(raw_config.get('tools', {}))
     cli_config = _parse_cli_config(raw_config.get('cli', {}))
     system_metadata = _parse_system_metadata(raw_config.get('system_metadata', {}))
     skill_metadata = _parse_skill_metadata(raw_config.get('skill_metadata', {}))
 
     return AppConfig(
+        llm_provider=llm_provider,
         openai=openai_config,
+        qwen=qwen_config,
         tools=tools_config,
         cli=cli_config,
         system_metadata=system_metadata,
@@ -80,6 +87,21 @@ def _parse_openai_config(raw: dict) -> OpenAIConfig:
         temperature=raw.get('temperature', 0.7),
         system_message=raw.get('system_message', 'You are a helpful assistant.'),
         use_stream=raw.get('use_stream', False),
+    )
+
+
+def _parse_qwen_config(raw: dict) -> QwenConfig:
+    """解析 Qwen 配置。"""
+    return QwenConfig(
+        api_url=raw.get('api_url', ''),
+        api_key=raw.get('api_key', ''),
+        model=raw.get('model', 'qwen-turbo'),
+        max_tokens=raw.get('max_tokens', 1000),
+        temperature=raw.get('temperature', 0.7),
+        system_message=raw.get('system_message', 'You are a helpful assistant.'),
+        use_stream=raw.get('use_stream', True),
+        enable_thinking=raw.get('enable_thinking', False),
+        thinking_budget=raw.get('thinking_budget', 4000),
     )
 
 
