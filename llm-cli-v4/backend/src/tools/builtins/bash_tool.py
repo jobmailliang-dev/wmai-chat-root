@@ -3,6 +3,7 @@
 在当前 shell 环境中执行命令并返回结果。
 """
 
+import platform
 import subprocess
 from typing import Any, Dict
 
@@ -18,6 +19,8 @@ class BashTool(BaseTool):
             name="bash",
             description="Execute a bash command in the current shell environment and return the result",
         )
+        # 检测 Windows 环境，使用 GBK 编码；其他环境使用 UTF-8
+        self._encoding = 'gbk' if platform.system() == 'Windows' else 'utf-8'
 
     def get_parameters(self) -> Dict[str, Any]:
         """获取参数定义。"""
@@ -57,7 +60,7 @@ class BashTool(BaseTool):
                 shell=True,
                 capture_output=True,
                 text=True,
-                encoding='utf-8',  # 解决 Windows 编码问题
+                encoding=self._encoding,
                 timeout=timeout,
             )
 

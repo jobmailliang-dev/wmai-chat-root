@@ -99,8 +99,8 @@ class ToolRegistry:
     def print_tool_result(self, name: str, result: str, max_len: int = 500) -> None:
         """打印工具执行结果。"""
         result_str = str(result)
-        # if len(result_str) > max_len:
-        #     result_str = result_str[:max_len] + "..."
+        if len(result_str) > max_len:
+            result_str = result_str[:max_len] + "..."
 
         print(f"{self._GRAY}[Tool Result] {self._RESET}"
               f"{self._GRAY}{name}: {result_str}{self._RESET}\n")
