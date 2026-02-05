@@ -91,9 +91,16 @@ class SkillExecutor:
         """格式化技能内容，替换占位符。"""
         content = skill.content
 
-        # 合并技能元数据与用户参数，用户参数优先级更高
-        merged_args = {**self._get_skill_metadata(), **args}
+        # 获取技能目录路径，供占位符使用
+        from pathlib import Path
+        skill_dir = str(Path(skill.file_path).parent)
 
+        # 合并技能元数据、skill_dir 与用户参数，用户参数优先级更高
+        merged_args = {
+            **self._get_skill_metadata(),
+            'skill_dir': skill_dir,
+            **args,
+        }
         # 替换 {xxx} 占位符
         def replacer(match):
             key = match.group(1)
@@ -102,8 +109,6 @@ class SkillExecutor:
         content = re.sub(r'\{(\w+)\}', replacer, content)
 
         # 添加技能上下文信息
-        from pathlib import Path
-        skill_dir = str(Path(skill.file_path).parent)
         context_info = f"Base directory: {skill_dir}\n"
 
         return context_info + content
