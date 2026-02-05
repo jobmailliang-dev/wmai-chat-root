@@ -44,6 +44,21 @@ class BashTool(BaseTool):
             "required": ["command"],
         }
 
+    def _decode_output(self, data: bytes) -> str:
+        """解码输出，Windows 上优先 GBK，失败则尝试 UTF-8。"""
+        if not data:
+            return ""
+        # 优先使用首选编码
+        try:
+            return data.decode(self._encoding)
+        except UnicodeDecodeError:
+            # 备用 UTF-8 编码
+            try:
+                return data.decode("utf-8")
+            except UnicodeDecodeError:
+                # 最后使用 ignore 策略
+                return data.decode("utf-8", errors="ignore")
+
     def execute(self, **kwargs) -> Dict[str, Any]:
         """执行 bash 命令。"""
         command = kwargs.get('command', '')
@@ -59,16 +74,15 @@ class BashTool(BaseTool):
                 command,
                 shell=True,
                 capture_output=True,
-                text=True,
-                encoding=self._encoding,
+                text=False,  # 获取二进制，手动解码
                 timeout=timeout,
             )
 
             return {
                 "success": result.returncode == 0,
                 "command": command,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
+                "stdout": self._decode_output(result.stdout),
+                "stderr": self._decode_output(result.stderr),
                 "return_code": result.returncode,
             }
 

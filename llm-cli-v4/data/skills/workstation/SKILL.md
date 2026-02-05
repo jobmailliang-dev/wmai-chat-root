@@ -20,7 +20,7 @@ curl ^"{cps_base_url}/blade-cps/workstation/pc-page?current=1^&size=20^&groupId=
   -H ^"Accept: application/json, text/plain, */*^" ^
   -H ^"Accept-Language: zh-CN^" ^
   -H ^"Authorization: {cps_authorization}^" ^
-  -H ^"Blade-Auth: {cps_blade_token}^" ^
+  -H ^"Blade-Auth: {cps_access_token}^" ^
   -H ^"Connection: keep-alive^" ^
   -H ^"Content-Type: application/json^" ^
   -H ^"Tenant-Id: 000000^" ^
