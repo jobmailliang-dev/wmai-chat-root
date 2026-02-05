@@ -117,6 +117,7 @@ def _parse_tools_config(raw: dict) -> ToolsConfig:
 def _parse_cli_config(raw: dict) -> CLIConfig:
     """解析 CLI 配置。"""
     return CLIConfig(
+        title=raw.get('title', 'LLM CLI - Chat with AI'),
         user_prefix=raw.get('user_prefix', 'You'),
         ai_prefix=raw.get('ai_prefix', 'AI'),
         exit_command=raw.get('exit_command', 'exit'),

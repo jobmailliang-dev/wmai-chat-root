@@ -27,6 +27,7 @@ class CLIInterface:
         )
         self.user_prefix = config.cli.user_prefix
         self.ai_prefix = config.cli.ai_prefix
+        self.title = config.cli.title
         self.exit_command = config.cli.exit_command
 
     def run(self) -> None:
@@ -57,7 +58,7 @@ class CLIInterface:
 
     def print_welcome(self) -> None:
         """打印欢迎信息。"""
-        print_welcome("LLM CLI v2", self.exit_command)
+        print_welcome(self.title, self.exit_command)
         print("提示：Ctrl+Enter 换行，Enter 发送，Ctrl+C 退出")
 
 

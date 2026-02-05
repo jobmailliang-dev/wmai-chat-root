@@ -7,7 +7,7 @@ from typing import Any, Dict, Generator, List
 
 from openai import OpenAI
 
-from src.adapters.base import LLMAdapter
+from src.adapters.base import LLMAdapter, LLMResponse
 from src.config.models import OpenAIConfig
 
 
@@ -30,7 +30,7 @@ class OpenAIClientAdapter(LLMAdapter):
         messages: List[Dict[str, str]],
         tools: List[Dict[str, Any]] = None,
         **kwargs,
-    ) -> str:
+    ) -> LLMResponse:
         """调用 OpenAI 兼容 API。"""
         try:
             # 构建请求参数
@@ -51,23 +51,24 @@ class OpenAIClientAdapter(LLMAdapter):
             completion = response.choices[0].message
 
             # 处理工具调用
+            tool_calls = []
             if completion.tool_calls:
-                # 返回包含工具调用的响应
-                return {
-                    "content": completion.content or "",
-                    "tool_calls": [
-                        {
-                            "id": tc.id,
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            },
-                        }
-                        for tc in completion.tool_calls
-                    ],
-                }
+                tool_calls = [
+                    {
+                        "id": tc.id,
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in completion.tool_calls
+                ]
 
-            return completion.content or ""
+            return LLMResponse(
+                content=completion.content or "",
+                tool_calls=tool_calls,
+                llm_provider="openai",
+            )
 
         except Exception as e:
             raise ConnectionError(f"API call failed: {str(e)}")
@@ -130,10 +131,10 @@ class OpenAIClientAdapter(LLMAdapter):
         messages: List[Dict[str, str]],
         tools: List[Dict[str, Any]] = None,
         **kwargs,
-    ) -> str:
+    ) -> LLMResponse:
         """根据配置自动选择流式或非流式调用。
 
-        流式模式下会在内部聚合所有 chunk 后返回统一格式。
+        流式模式下会在内部聚合所有 chunk 后返回 LLMResponse。
         """
         if self.use_stream:
             # 流式调用：聚合所有 chunk 后返回
@@ -146,8 +147,10 @@ class OpenAIClientAdapter(LLMAdapter):
                 if chunk.get("tool_calls"):
                     tool_calls.extend(chunk["tool_calls"])
 
-            if tool_calls:
-                return {"content": full_content or "", "tool_calls": tool_calls}
-            return full_content
+            return LLMResponse(
+                content=full_content,
+                tool_calls=tool_calls,
+                llm_provider="openai",
+            )
         else:
             return self.complete(messages, tools, **kwargs)

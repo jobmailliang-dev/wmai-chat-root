@@ -46,6 +46,8 @@ class BashTool(BaseTool):
         command = kwargs.get('command', '')
         timeout = kwargs.get('timeout', 60)
 
+        print(f"Bash({command})")
+
         if not command:
             raise ValueError("Command cannot be empty")
 

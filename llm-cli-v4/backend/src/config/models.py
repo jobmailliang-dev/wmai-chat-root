@@ -44,6 +44,7 @@ class ToolsConfig:
 @dataclass
 class CLIConfig:
     """CLI 界面配置。"""
+    title: str = "LLM CLI"
     user_prefix: str = "You"
     ai_prefix: str = "AI"
     exit_command: str = "exit"

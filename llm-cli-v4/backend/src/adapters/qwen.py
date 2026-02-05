@@ -7,7 +7,7 @@ from typing import Any, Dict, Generator, List
 
 from openai import OpenAI
 
-from src.adapters.base import LLMAdapter
+from src.adapters.base import LLMAdapter, LLMResponse
 from src.config.models import QwenConfig
 
 
@@ -32,7 +32,7 @@ class QwenClientAdapter(LLMAdapter):
         messages: List[Dict[str, str]],
         tools: List[Dict[str, Any]] = None,
         **kwargs,
-    ) -> str:
+    ) -> LLMResponse:
         """调用 Qwen API。"""
         try:
             # 构建请求参数
@@ -60,22 +60,28 @@ class QwenClientAdapter(LLMAdapter):
             completion = response.choices[0].message
 
             # 处理工具调用
+            tool_calls = []
             if completion.tool_calls:
-                return {
-                    "content": completion.content or "",
-                    "tool_calls": [
-                        {
-                            "id": tc.id,
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            },
-                        }
-                        for tc in completion.tool_calls
-                    ],
-                }
+                tool_calls = [
+                    {
+                        "id": tc.id,
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in completion.tool_calls
+                ]
 
-            return completion.content or ""
+            # Qwen 思考内容可能在 content 中或 reasoning_content 字段
+            reasoning = getattr(completion, "reasoning_content", "") or ""
+
+            return LLMResponse(
+                content=completion.content or "",
+                tool_calls=tool_calls,
+                reasoning_content=reasoning,
+                llm_provider="qwen",
+            )
 
         except Exception as e:
             raise ConnectionError(f"Qwen API call failed: {str(e)}")
@@ -120,8 +126,6 @@ class QwenClientAdapter(LLMAdapter):
             for chunk in response:
                 if chunk.choices and len(chunk.choices) > 0:
                     delta = chunk.choices[0].delta
-
-
                     # Qwen 思考过程内容
                     if hasattr(delta, "reasoning_content") and delta.reasoning_content:
                         yield {"reasoning_content": delta.reasoning_content}
@@ -160,36 +164,26 @@ class QwenClientAdapter(LLMAdapter):
         messages: List[Dict[str, str]],
         tools: List[Dict[str, Any]] = None,
         **kwargs,
-    ) -> str:
+    ) -> LLMResponse:
         """根据配置自动选择流式或非流式调用。"""
         if self.use_stream:
             full_content = ""
             reasoning_content = ""
             tool_calls = []
-            is_answering = False
 
             for chunk in self.complete_stream(messages, tools, **kwargs):
                 if chunk.get("reasoning_content"):
                     reasoning_content += chunk["reasoning_content"]
                 if chunk.get("content"):
-                    if not is_answering:
-                        is_answering = True
                     full_content += chunk["content"]
                 if chunk.get("tool_calls"):
                     tool_calls.extend(chunk["tool_calls"])
 
-            if reasoning_content:
-                print(f"=========有思考reasoning_content{reasoning_content}")
-            # 拼接思考过程和最终回答
-            if reasoning_content and full_content:
-                combined_content = f"{reasoning_content}\n\n{full_content}"
-            elif reasoning_content:
-                combined_content = reasoning_content
-            else:
-                combined_content = full_content
-
-            if tool_calls:
-                return {"content": combined_content, "tool_calls": tool_calls}
-            return combined_content
+            return LLMResponse(
+                content=full_content,
+                tool_calls=tool_calls,
+                reasoning_content=reasoning_content,
+                llm_provider="qwen",
+            )
         else:
             return self.complete(messages, tools, **kwargs)

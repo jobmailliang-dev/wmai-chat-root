@@ -32,19 +32,19 @@ def _trigger_event(event_type: str, data: Any) -> None:
         event_callback(event_type, data)
 
 
-def print_welcome(title: str = "LLM CLI", exit_cmd: str = "exit") -> None:
+def print_welcome(title: str = "LLM CLI - Chat with AI", exit_cmd: str = "exit") -> None:
     """打印欢迎信息。"""
     print("=" * 60)
-    print(f"{title} - Chat with AI")
+    print(f"{title}")
     print("=" * 60)
     print(f"Type '{exit_cmd}' to quit")
     print()
 
 
-def print_thinking(content: str = "正在思考...") -> None:
+def print_thinking(content: str = "Thinking...") -> None:
     """在实时输出前打印状态信息（用于 CLI 打字机效果），灰色显示。"""
     _trigger_event(EVENT_THINKING, {"content": content})
-    print(f"\x1b[90m{content}\x1b[0m", end="", flush=True)
+    print(f"\x1b[90m[Thinking]  {content}\x1b[0m", end="", flush=True)
 
 
 def print_message(content: str) -> None:

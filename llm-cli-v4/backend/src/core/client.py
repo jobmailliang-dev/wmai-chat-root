@@ -6,9 +6,7 @@
 import json
 from typing import Any, Dict, List, Optional, Union
 
-from src.config.models import OpenAIConfig, QwenConfig, ToolsConfig
-
-from src.adapters.base import LLMAdapter
+from src.adapters.base import LLMAdapter, LLMResponse
 from src.config.models import OpenAIConfig, QwenConfig, ToolsConfig
 from src.core.session import SessionManager
 from src.tools.registry import get_registry
@@ -89,13 +87,17 @@ class LLMClient:
 			try:
 				response = self.adapter.complete_auto(messages=messages, tools=available_schemas)
 
+				# response 是 LLMResponse 类型
+				tool_calls = response.tool_calls
+				assistant_content = response.content
+
+				# 获取思考内容并打印
+				thinking_content = response.get_thinking_content()
+				if thinking_content:
+					print_thinking(thinking_content)
+
 				# 处理工具调用响应
-				if isinstance(response, dict) and response.get('tool_calls'):
-					tool_calls = response['tool_calls']
-					assistant_content = response.get('content', '')
-					print_thinking(assistant_content)
-
-
+				if tool_calls:
 					# 添加助手消息（带工具调用）
 					self.session.add_assistant(
 						assistant_content,
@@ -179,11 +181,7 @@ class LLMClient:
 
 				else:
 					# 最终响应
-					response_text = response if isinstance(response, str) else ""
-					if not response_text and isinstance(response, dict):
-						response_text = response.get('content', '')
-
-					final_response = response_text
+					final_response = assistant_content
 					self.session.add_assistant(final_response)
 					break
 
