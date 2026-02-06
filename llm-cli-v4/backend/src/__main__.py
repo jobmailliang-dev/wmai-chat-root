@@ -26,7 +26,7 @@ def run_web():
     import uvicorn
     from fastapi import FastAPI
     from fastapi.staticfiles import StaticFiles
-    from src.api import chat_router, health_router
+    from src.api import chat_router, health_router, test_router
     from src.web.cors import setup_cors
 
     app = FastAPI(
@@ -41,6 +41,7 @@ def run_web():
     # 注册路由
     app.include_router(health_router)
     app.include_router(chat_router)
+    app.include_router(test_router)
 
     # 静态文件服务（前端构建产物）
     static_dir = PROJECT_ROOT / "backend" / "static"

@@ -14,3 +14,6 @@ prompt_toolkit>=3.0.0
 
 # QuickJS
 quickjs>=1.19.4
+
+# DI 框架
+injector>=1.0.0
