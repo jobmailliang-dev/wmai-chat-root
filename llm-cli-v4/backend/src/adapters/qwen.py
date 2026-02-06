@@ -165,9 +165,9 @@ class QwenClientAdapter(LLMAdapter):
         tools: List[Dict[str, Any]] = None,
         **kwargs,
     ) -> LLMResponse:
-        """根据配置自动选择流式或非流式调用。"""
         if self.use_stream:
             full_content = ""
+            """根据配置自动选择流式或非流式调用。"""
             reasoning_content = ""
             tool_calls = []
 

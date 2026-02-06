@@ -8,6 +8,7 @@ from src.tools.builtins.calculator_tool import CalculatorTool
 from src.tools.builtins.read_file_tool import ReadFileTool
 from src.tools.builtins.skill_tool import SkillTool
 from src.tools.builtins.bash_tool import BashTool
+from src.tools.builtins.quickjs_tool import QuickJSTool
 
 __all__ = [
     'DateTimeTool',
@@ -15,4 +16,5 @@ __all__ = [
     'ReadFileTool',
     'SkillTool',
     'BashTool',
+    'QuickJSTool',
 ]
