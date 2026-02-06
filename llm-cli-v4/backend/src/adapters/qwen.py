@@ -167,6 +167,7 @@ class QwenClientAdapter(LLMAdapter):
     ) -> LLMResponse:
         if self.use_stream:
             full_content = ""
+            """根据配置自动选择流式或非流式调用。"""
             reasoning_content = ""
             tool_calls = []
 
