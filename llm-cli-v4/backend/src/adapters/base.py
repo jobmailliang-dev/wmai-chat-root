@@ -39,7 +39,7 @@ class LLMAdapter(ABC):
         tools: List[Dict[str, Any]] = None,
         **kwargs,
     ) -> LLMResponse:
-        """发起 API 请求。
+        self.llm_response_ai_ = """发起 API 请求。
 
         Args:
             messages: 消息列表
@@ -49,6 +49,7 @@ class LLMAdapter(ABC):
         Returns:
             LLMResponse: AI 回复内容
         """
+        self.ai_ = self.llm_response_ai_
         pass
 
     @abstractmethod
@@ -58,7 +59,7 @@ class LLMAdapter(ABC):
         tools: List[Dict[str, Any]] = None,
         **kwargs,
     ) -> Generator[Dict[str, Any], None, None]:
-        """流式发起 API 请求。
+        self.content_ = """流式发起 API 请求。
 
         Args:
             messages: 消息列表
