@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-router = APIRouter(tags=["health"])
+router = APIRouter(prefix="", tags=["health"])
 
 
 class HealthResponse(BaseModel):

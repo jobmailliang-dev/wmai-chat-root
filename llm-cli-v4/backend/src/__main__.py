@@ -1,8 +1,13 @@
 """LLM CLI V3 - 应用入口。"""
 
 import argparse
+import logging
 import sys
 from pathlib import Path
+
+# 禁用 Uvicorn 默认访问日志，保留自定义中间件的简洁输出
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.setLevel(logging.WARNING)
 
 # 添加 src 目录到 Python 路径
 SRC_DIR = Path(__file__).parent
@@ -26,8 +31,18 @@ def run_web():
     import uvicorn
     from fastapi import FastAPI
     from fastapi.staticfiles import StaticFiles
-    from src.api import chat_router, health_router, test_router
+    from src.api import chat_router, health_router, test_router, tools_router
+    from src.utils.logging_web import setup_logging
     from src.web.cors import setup_cors
+    from src.web.logging_middleware import RequestLoggingMiddleware
+
+    # 初始化日志系统
+    logger = setup_logging(
+        log_level="INFO",
+        console_output=True,
+        file_output=True,
+        retention_days=30,
+    )
 
     app = FastAPI(
         title="LLM CLI V3",
@@ -35,10 +50,14 @@ def run_web():
         version="3.0.0",
     )
 
+    # 添加请求日志中间件（最后注册，确保最先执行）
+    app.add_middleware(RequestLoggingMiddleware)
+
     # 配置 CORS
     setup_cors(app)
 
-    # 注册路由
+    # 注册路由 (tools 最先注册，显示在 API 文档最上方)
+    app.include_router(tools_router)
     app.include_router(health_router)
     app.include_router(chat_router)
     app.include_router(test_router)
@@ -76,6 +95,7 @@ def run_web():
     print(f"Starting LLM CLI V3 Web Server...")
     print(f"http://{host}:{port}")
     print(f"API Docs: http://{host}:{port}/docs")
+    logger.info(f"Server started on http://{host}:{port}")
 
     uvicorn.run(app, host=host, port=port)
 

@@ -13,7 +13,7 @@ class Logger:
     _GRAY = "\033[90m" if sys.stdout.isatty() else ""
     _RESET = "\033[0m" if sys.stdout.isatty() else ""
 
-    def __init__(self, name: str = "llm-cli-v2"):
+    def __init__(self, name: str = "cli"):
         """初始化日志器。"""
         self.name = name
         self._quiet = False
@@ -45,7 +45,7 @@ class Logger:
 _global_logger: Optional[Logger] = None
 
 
-def get_logger(name: str = "llm-cli-v2") -> Logger:
+def get_logger(name: str = "cli") -> Logger:
     """获取全局日志器。"""
     global _global_logger
     if _global_logger is None:

@@ -5,6 +5,7 @@ from injector import Binder
 
 from .datasource import Connection, DatabaseManager
 from .test import Test, TestService, TestDao
+from .tools import Tool, ToolService, ToolDao
 
 
 def _init_database():
@@ -42,10 +43,27 @@ class TestModule(Module):
         )
 
 
+class ToolModule(Module):
+    """Tool 模块配置"""
+
+    def configure(self, binder: Binder):
+        # DAO - 单例
+        binder.bind(
+            ToolDao,
+            scope=singleton
+        )
+        # Service - 单例
+        binder.bind(
+            ToolService,
+            scope=singleton
+        )
+
+
 # 创建 Injector 实例
 injector = Injector([
     DatabaseModule(),
-    TestModule()
+    TestModule(),
+    ToolModule()
 ])
 
 # 便捷函数
@@ -66,6 +84,9 @@ __all__ = [
     "Test",
     "TestService",
     "TestDao",
+    "Tool",
+    "ToolService",
+    "ToolDao",
     "Connection",
     "DatabaseManager"
 ]

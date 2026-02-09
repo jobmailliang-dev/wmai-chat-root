@@ -72,7 +72,7 @@ class AsyncEventQueue:
         from src.cli.output import event_callback
         return event_callback
 
-router = APIRouter(prefix="/chat", tags=["chat"])
+router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 # 全局客户端实例
 _client: Optional[LLMClient] = None
