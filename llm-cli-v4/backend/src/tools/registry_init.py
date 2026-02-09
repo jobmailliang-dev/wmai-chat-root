@@ -11,6 +11,7 @@ from src.tools.builtins import (
     SkillTool,
     BashTool,
     QuickJSTool,
+    HttpTool,
 )
 
 
@@ -22,6 +23,7 @@ def _register_builtins() -> None:
     register_tool(SkillTool())
     register_tool(BashTool())
     register_tool(QuickJSTool())
+    register_tool(HttpTool())
 
 
 # 模块导入时自动注册
