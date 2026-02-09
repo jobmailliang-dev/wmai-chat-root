@@ -12,6 +12,17 @@ class ValidException(Exception):
         super().__init__(self.message)
 
 
+class ApiException(Exception):
+    """API 业务异常
+
+    抛出此异常时，RequestLoggingMiddleware 会返回 400 状态码给前端。
+    """
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
 T = TypeVar("T")
 
 
@@ -86,4 +97,4 @@ class IService(Generic[T]):
         raise NotImplementedError
 
 
-__all__ = ["ValidException", "IService"]
+__all__ = ["ValidException", "ApiException", "IService"]

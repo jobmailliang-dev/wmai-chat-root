@@ -12,12 +12,10 @@ class ApiResponse(BaseModel):
         success: 是否成功
         message: 提示信息
         data: 响应数据
-        error: 错误信息
     """
     success: bool = Field(default=False, description="是否成功")
     message: Optional[str] = Field(default=None, description="提示信息")
     data: Optional[Any] = Field(default=None, description="响应数据")
-    error: Optional[str] = Field(default=None, description="错误信息")
 
 
     @staticmethod
@@ -25,9 +23,8 @@ class ApiResponse(BaseModel):
         return ApiResponse( success = True,  data = data)
 
     @staticmethod
-    def fail( message: Optional[str] ):
-        return ApiResponse(message=message)
-
+    def fail(message: Optional[str]):
+         return ApiResponse( success = False,  message = message)
 
     class Config:
         json_schema_extra = {
@@ -35,6 +32,5 @@ class ApiResponse(BaseModel):
                 "success": True,
                 "message": "操作成功",
                 "data": {"id": 1, "name": "test"},
-                "error": None
             }
         }
