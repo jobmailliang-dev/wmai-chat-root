@@ -68,20 +68,28 @@ def redact_sensitive_data(data: dict) -> dict:
 class ConsoleLogFormatter(logging.Formatter):
     """控制台格式化器 - 简洁易读的格式。"""
 
-    FORMATS = {
-        logging.DEBUG: "[%(levelname)s] %(asctime)s %(msg)s",
-        logging.INFO: "[%(levelname)s] %(asctime)s %(msg)s",
-        logging.WARNING: "[%(levelname)s] %(asctime)s %(msg)s",
-        logging.ERROR: "[%(levelname)s] %(asctime)s %(msg)s",
-        logging.CRITICAL: "[%(levelname)s] %(asctime)s %(msg)s",
+    # 颜色转义序列
+    COLORS = {
+        "DEBUG": "\033[36m",    # 青色
+        "INFO": "\033[32m",     # 绿色
+        "WARNING": "\033[33m",  # 黄色
+        "ERROR": "\033[31m",    # 红色
+        "CRITICAL": "\033[35m", # 紫色
+        "RESET": "\033[0m",     # 重置
     }
 
     def format(self, record: logging.LogRecord) -> str:
         """格式化日志记录。"""
-        fmt = self.FORMATS.get(record.levelno, "%(msg)s")
-        # 设置默认时间格式
-        record.asctime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return fmt % record.__dict__
+        levelname = record.levelname
+        color = self.COLORS.get(levelname, "")
+        reset = self.COLORS["RESET"]
+
+        # 获取格式化后的消息
+        message = record.getMessage()
+
+        # 构建带颜色的格式
+        asctime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return f"{color}{levelname}:{reset} {asctime} {message}"
 
 
 class JSONLogFormatter(logging.Formatter):

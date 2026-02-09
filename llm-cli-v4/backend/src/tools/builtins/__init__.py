@@ -8,7 +8,7 @@ from src.tools.builtins.calculator_tool import CalculatorTool
 from src.tools.builtins.read_file_tool import ReadFileTool
 from src.tools.builtins.skill_tool import SkillTool
 from src.tools.builtins.bash_tool import BashTool
-from src.tools.builtins.quickjs_tool import QuickJSTool
+from src.tools.quickjs.quickjs_tool import QuickJSTool
 from src.tools.builtins.http_tool import HttpTool
 
 __all__ = [

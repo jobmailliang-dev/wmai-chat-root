@@ -44,7 +44,7 @@ async def get_tools(id: int = Query(default=None, description="Tool ID (optional
 async def create_tool(request: dict):
     """创建工具"""
     data = _tool_service.create_one(request)
-    _logger.info("[tool_create] id=%s", data.id if data else None)
+    _logger.info(f"[tool_create] id={data.id if data else None}")
     return ApiResponse.ok(data)
 
 
@@ -53,7 +53,7 @@ async def create_tool(request: dict):
 async def update_tool(id: int = Query(..., description="Tool ID"), request: dict = None):
     """更新工具"""
     data = _tool_service.update(id, request or {})
-    _logger.info("[tool_update] id=%s", id)
+    _logger.info(f"[tool_update] id={id}")
     return ApiResponse.ok(data)
 
 
@@ -119,27 +119,33 @@ async def execute_tool(
         raise ValidException("tool is not active")
 
     # 2. 组装 JavaScript 脚本
-    # context = { args: {前端传过来的json对象} }
-    # {tool.code}
-    # return execute(context)
-    script = f"""\
+    # 检查 code 是否包含 function execute
+    if "function execute" in tool_data.code:
+        # 包含 execute 函数，包装执行
+        # context = { args: {前端传过来的json对象} }
+        # {tool.code}
+        # return execute(context);
+        script = f"""\
 const context = {{
   args: {json.dumps(params, ensure_ascii=False)}
 }};
 {tool_data.code}
 return execute(context);
 """
+    else:
+        # 不包含 function execute，直接使用 code 作为脚本
+        script = tool_data.code
 
     # 3. 调用 quickjs_tool 执行拼接的脚本
     registry = get_registry()
     start_time = time.time()
 
-    _logger.info("[tool_execute] tool=%s", tool_data.name)
+    _logger.info(f"[tool_execute] tool={tool_data.name} script={script} ")
 
     try:
         result = registry.execute("quickjs", code=script)
     except Exception as e:
-        _logger.error("[tool_execute_error] tool=%s, error=%s", tool_data.name, str(e))
+        _logger.error(f"[tool_execute_error] tool={tool_data.name}, error={str(e)}")
         raise ApiException(f"执行失败: {str(e)}")
 
     # 4. 返回最终结果
