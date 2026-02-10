@@ -15,7 +15,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from src.utils.logging_web import API_LOGGER_NAME, get_request_logger
-from src.modules.base import ApiException
+from src.modules.base import ApiException, ValidException
 
 
 # 业务错误码
@@ -112,6 +112,23 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 content={
                     "success": False,
                     "error": str(exc),
+                    "data": None
+                },
+                headers={"X-Request-ID": request_id}
+            )
+
+        except ValidException as exc:
+            # 参数校验异常
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            self.logger.warning(
+                f"{request.method} {request.url.path} VALID_ERROR: {str(exc)} ({duration_ms:.2f}ms)"
+            )
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": exc.message,
+                    "error_code": BusinessCode.VALIDATION_ERROR,
                     "data": None
                 },
                 headers={"X-Request-ID": request_id}
