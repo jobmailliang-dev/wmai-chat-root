@@ -108,7 +108,12 @@ class ToolService(IToolService):
     def get_inheritable_tools(self) -> List[ToolInheritableDto]:
         """获取可继承的工具列表"""
         return [
-            ToolInheritableDto(id=tool.id, name=tool.name, description=tool.description)
+            ToolInheritableDto(
+                id=tool.id,
+                name=tool.name,
+                description=tool.description,
+                parameters=[p.to_dict() for p in tool.parameters]
+            )
             for tool in self._dao.get_active()
         ]
 

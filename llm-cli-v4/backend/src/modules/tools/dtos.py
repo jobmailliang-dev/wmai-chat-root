@@ -48,13 +48,17 @@ class ToolInheritableDto(BaseModel):
     id: int = Field(..., description="工具 ID")
     name: str = Field(..., description="工具名称")
     description: str = Field(..., description="工具描述")
+    parameters: List[Any] = Field(default_factory=list, description="参数列表")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "id": 1,
                 "name": "bash",
-                "description": "Execute bash commands"
+                "description": "Execute bash commands",
+                "parameters": [
+                    {"name": "cmd", "description": "Command to execute", "type": "string", "required": True}
+                ]
             }
         }
 
