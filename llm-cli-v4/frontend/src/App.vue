@@ -4,7 +4,10 @@
     <ChatWindow
       ref="chatWindowRef"
       :baseUrl="baseUrl"
+      :messages="messages"
+      :chatState="chatState"
       @send-message="handleSendMessage"
+      @clear-messages="clearMessages"
     />
   </div>
 </template>
@@ -19,7 +22,7 @@ import { useConversation } from './hooks/useConversation';
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const chatWindowRef = ref<InstanceType<typeof ChatWindow> | null>(null);
 
-const { streamMessage, clearMessages } = useChat(baseUrl);
+const { messages, state: chatState, streamMessage, clearMessages } = useChat(baseUrl);
 const { createConversation, selectConversation } = useConversation();
 
 const handleNewChat = () => {

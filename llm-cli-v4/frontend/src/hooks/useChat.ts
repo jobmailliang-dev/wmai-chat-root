@@ -65,6 +65,7 @@ export function useChat(baseUrl = 'http://localhost:8000') {
         buffer = lines.pop() || '';
 
         for (const line of lines) {
+          console.log(line)
           if (line.startsWith('event:')) {
             // 保存上一个事件（如果有完整的数据）
             if (currentEventType && currentData) {
@@ -78,9 +79,9 @@ export function useChat(baseUrl = 'http://localhost:8000') {
           // 忽略空行和其他行
         }
       }
-
-      // 流结束时保存最后一个事件
-      if (currentEventType && currentData) {
+      console.log(111111)
+      // 流结束时保存最后一个事件（包括 done 事件）
+      if (currentEventType) {
         handleSSERecord(currentEventType, currentData, assistantMsgId);
       }
     } catch (err) {
@@ -111,7 +112,7 @@ export function useChat(baseUrl = 'http://localhost:8000') {
       // 进入 thinking 状态
       lastMsg.isThinking = true;
     }
-
+    console.log(eventType)
     switch (eventType) {
       case 'content':
         // content 事件：累积内容，关闭 thinking 状态
@@ -133,8 +134,10 @@ export function useChat(baseUrl = 'http://localhost:8000') {
         break;
 
       case 'done':
-        // 流结束：关闭 thinking 状态
+        // 流结束：关闭 thinking 状态和流状态
         lastMsg.isThinking = false;
+        state.isLoading = false;
+        state.isStreaming = false;
         break;
 
       case 'error':

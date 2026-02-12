@@ -10,7 +10,7 @@
         </span>
       </div>
       <div class="header-right">
-        <button @click="clearMessages" class="header-btn" title="清空对话">
+        <button @click="emit('clear-messages')" class="header-btn" title="清空对话">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
@@ -62,19 +62,35 @@
 <script setup lang="ts">
 import { ref, computed, watch, watchEffect } from 'vue';
 import MessageList from './MessageList.vue';
-import { useChat } from '../hooks/useChat';
 import { useConversation } from '../hooks/useConversation';
+
+import type { Message } from '../types/chat';
 
 interface Props {
   baseUrl?: string;
+  messages: Message[];
+  chatState: {
+    isLoading: boolean;
+    isStreaming: boolean;
+    error: string | null;
+  };
 }
 
 const props = withDefaults(defineProps<Props>(), {
   baseUrl: 'http://localhost:8000',
+  messages: () => [],
+  chatState: () => ({
+    isLoading: false,
+    isStreaming: false,
+    error: null,
+  }),
 });
 
-const { messages, state, streamMessage, clearMessages } = useChat(props.baseUrl);
 const { currentConversation, updateConversation } = useConversation();
+
+// 使用 props 传入的状态
+const messages = computed(() => props.messages);
+const state = computed(() => props.chatState);
 
 const inputMessage = ref('');
 const textareaRef = ref<HTMLTextAreaElement>();
@@ -113,6 +129,7 @@ watchEffect(() => {
 
 const emit = defineEmits<{
   (e: 'send-message', message: string): void;
+  (e: 'clear-messages'): void;
 }>();
 
 // 自动调整高度
