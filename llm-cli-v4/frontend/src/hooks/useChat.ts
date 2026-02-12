@@ -38,7 +38,7 @@ export function useChat(baseUrl = 'http://localhost:8000') {
 
     try {
       const encodedMessage = encodeURIComponent(message);
-      const response = await fetch(`${baseUrl}/chat/stream?message=${encodedMessage}`);
+      const response = await fetch(`${baseUrl}/api/chat/stream?message=${encodedMessage}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
