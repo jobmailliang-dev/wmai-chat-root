@@ -3,6 +3,8 @@
 执行 JavaScript 代码并返回结果。
 """
 
+import asyncio
+import json as pyjson
 from typing import Any, Dict, List
 
 import quickjs
@@ -166,6 +168,24 @@ class QuickJSTool(BaseTool):
             raise ValueError(f"JavaScript syntax error: {str(e)}")
         except Exception as e:
             raise ValueError(f"JavaScript execution failed: {str(e)}")
+
+    async def ainvoke(self, **kwargs) -> Dict[str, Any]:
+        """异步执行 JavaScript 代码。
+
+        默认实现调用 execute 方法（已在线程池中运行）。
+        子类可以重写此方法以支持真正的异步执行。
+
+        Args:
+            **kwargs: 工具参数，支持 code 和 show_console
+
+        Returns:
+            包含 code, result, result_type 的字典
+
+        Raises:
+            ValueError: 代码为空或执行失败
+        """
+        # 使用默认的 BaseTool.ainvoke，它会在线程池中调用 execute
+        return await super().ainvoke(**kwargs)
 
     def __repr__(self) -> str:
         return f"QuickJSTool(name={self.name})"

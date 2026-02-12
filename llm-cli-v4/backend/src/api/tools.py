@@ -3,7 +3,7 @@
 import asyncio
 import json
 import time
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
@@ -223,7 +223,8 @@ return execute(context);
         }, "start")
 
         try:
-            result = registry.execute("quickjs", code=script)
+            # 使用异步方法执行工具
+            result = await registry.aexecute("quickjs", code=script)
 
             # 解析结果
             try:

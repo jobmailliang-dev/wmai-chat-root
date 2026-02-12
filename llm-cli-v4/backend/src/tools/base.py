@@ -3,6 +3,7 @@
 定义所有工具的抽象基类。
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
@@ -56,6 +57,25 @@ class BaseTool(ABC):
             ValueError: 参数无效或执行失败
         """
         pass
+
+    async def ainvoke(self, **kwargs: Any) -> Dict[str, Any]:
+        """异步执行工具逻辑。
+
+        默认实现调用同步的 execute 方法。
+        子类可以重写此方法以支持真正的异步执行。
+
+        Args:
+            **kwargs: 工具参数
+
+        Returns:
+            工具执行结果字典
+
+        Raises:
+            ValueError: 参数无效或执行失败
+        """
+        # 默认实现：在线程池中执行同步的 execute 方法
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: self.execute(**kwargs))
 
     def get_schema(self) -> Dict[str, Any]:
         """获取完整的工具 schema。"""

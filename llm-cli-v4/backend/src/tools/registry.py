@@ -3,6 +3,8 @@
 管理工具的注册和执行。
 """
 
+import asyncio
+import json
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -77,7 +79,33 @@ class ToolRegistry:
                 raise ValueError(f"Arguments must be dict, got {type(kwargs)}")
 
             result = tool.execute(**kwargs)
-            import json
+            return json.dumps(result, ensure_ascii=False, indent=2)
+        except Exception as e:
+            raise ValueError(f"Tool execution failed: {str(e)}")
+
+    async def aexecute(self, name: str, **kwargs: Any) -> str:
+        """异步执行工具。
+
+        Args:
+            name: 工具名称
+            **kwargs: 工具参数
+
+        Returns:
+            JSON 格式的执行结果
+
+        Raises:
+            ValueError: 工具不存在或执行失败
+        """
+        tool = self.get(name)
+        if not tool:
+            raise ValueError(f"Tool '{name}' not found")
+
+        try:
+            if not isinstance(kwargs, dict):
+                raise ValueError(f"Arguments must be dict, got {type(kwargs)}")
+
+            # 调用工具的异步方法
+            result = await tool.ainvoke(**kwargs)
             return json.dumps(result, ensure_ascii=False, indent=2)
         except Exception as e:
             raise ValueError(f"Tool execution failed: {str(e)}")
