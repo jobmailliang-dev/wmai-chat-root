@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
+    "mock:server": "node mock-server.js",
     "build": "vue-tsc && vite build",
     "preview": "vite preview"
   },

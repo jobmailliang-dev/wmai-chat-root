@@ -4,7 +4,7 @@
     <div class="chat-header">
       <div class="header-left">
         <h2 class="chat-title">{{ currentTitle }}</h2>
-        <span v-if="isStreaming" class="streaming-badge">
+        <span v-if="state.isStreaming" class="streaming-badge">
           <span class="dot"></span>
           思考中
         </span>
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, watchEffect } from 'vue';
 import MessageList from './MessageList.vue';
 import { useChat } from '../hooks/useChat';
 import { useConversation } from '../hooks/useConversation';
@@ -98,23 +98,18 @@ const send = async () => {
 };
 
 // 监听消息变化，更新对话信息
-watch(
-  () => messages.value.length,
-  (newLen, oldLen) => {
-    if (currentConversation.value) {
-      // 有新消息时更新预览
-      if (newLen > oldLen) {
-        const lastMsg = messages.value[messages.value.length - 1];
-        if (lastMsg.role === 'user') {
-          updateConversation(currentConversation.value.id, {
-            preview: lastMsg.content,
-            messageCount: messages.value.length,
-          });
-        }
-      }
+watchEffect(() => {
+  const len = messages.value.length;
+  if (len > 0 && currentConversation.value) {
+    const lastMsg = messages.value[len - 1];
+    if (lastMsg.role === 'user') {
+      updateConversation(currentConversation.value.id, {
+        preview: lastMsg.content,
+        messageCount: len,
+      });
     }
   }
-);
+});
 
 const emit = defineEmits<{
   (e: 'send-message', message: string): void;

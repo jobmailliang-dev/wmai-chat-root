@@ -12,6 +12,7 @@ export function useChat(baseUrl = 'http://localhost:8000') {
   const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
   const addMessage = (role: Message['role'], content: string = '') => {
+    console.log("addMessage", content )
     const msg: Message = {
       id: generateId(),
       role,
@@ -49,6 +50,9 @@ export function useChat(baseUrl = 'http://localhost:8000') {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      // 在循环外部跟踪当前事件状态，避免重复保存
+      let currentEventType = '';
+      let currentData = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -60,12 +64,9 @@ export function useChat(baseUrl = 'http://localhost:8000') {
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
 
-        let currentEventType = '';
-        let currentData = '';
-
         for (const line of lines) {
           if (line.startsWith('event:')) {
-            // 保存上一个事件（如果有）
+            // 保存上一个事件（如果有完整的数据）
             if (currentEventType && currentData) {
               handleSSERecord(currentEventType, currentData, assistantMsgId);
             }
@@ -74,15 +75,16 @@ export function useChat(baseUrl = 'http://localhost:8000') {
           } else if (line.startsWith('data:')) {
             currentData += line.replace('data:', '').trim();
           }
-        }
-
-        // 保存最后一个事件
-        if (currentEventType && currentData) {
-          handleSSERecord(currentEventType, currentData, assistantMsgId);
+          // 忽略空行和其他行
         }
       }
-    } catch (err: any) {
-      state.error = err.message || '流式请求失败';
+
+      // 流结束时保存最后一个事件
+      if (currentEventType && currentData) {
+        handleSSERecord(currentEventType, currentData, assistantMsgId);
+      }
+    } catch (err) {
+      state.error = err instanceof Error ? err.message : '流式请求失败';
       const lastMsg = messages.value.find(m => m.id === assistantMsgId);
       if (lastMsg) {
         lastMsg.content += `\n错误: ${state.error}`;
