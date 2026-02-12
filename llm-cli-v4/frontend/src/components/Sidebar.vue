@@ -43,25 +43,31 @@
 </template>
 
 <script setup lang="ts">
-import { useConversation } from '../hooks/useConversation';
+import type { Conversation } from '../types/conversation';
+
+interface Props {
+  conversations: Conversation[];
+  currentConversationId: string | null;
+}
 
 interface Emits {
   (e: 'new-chat'): void;
   (e: 'select', id: string): void;
+  (e: 'delete', id: string): void;
 }
 
+const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const {
-  conversations,
-  currentConversationId,
-  createConversation,
-  selectConversation,
-  deleteConversation,
-} = useConversation();
+const selectConversation = (id: string) => {
+  emit('select', id);
+};
+
+const deleteConversation = (id: string) => {
+  emit('delete', id);
+};
 
 const handleNewChat = () => {
-  createConversation();
   emit('new-chat');
 };
 </script>

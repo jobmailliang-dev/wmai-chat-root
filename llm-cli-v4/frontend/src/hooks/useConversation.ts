@@ -39,13 +39,16 @@ export function useConversation() {
     return content.length > 30 ? content.substring(0, 30) + '...' : content;
   };
 
-  // 创建新对话
+  // 生成对话标题
+  const generateTitle = (content: string): string => {
+    return content.length > 20 ? content.substring(0, 20) + '...' : content;
+  };
+
+  // 创建新对话（立即添加到列表）
   const createConversation = (firstMessage?: string): Conversation => {
     const now = Date.now();
     const id = 'conv_' + now.toString(36) + Math.random().toString(36).substr(2);
-    const title = firstMessage
-      ? (firstMessage.length > 20 ? firstMessage.substring(0, 20) + '...' : firstMessage)
-      : '新对话';
+    const title = firstMessage ? generateTitle(firstMessage) : '新对话';
 
     const conversation: Conversation = {
       id,
@@ -61,6 +64,11 @@ export function useConversation() {
     saveToStorage();
 
     return conversation;
+  };
+
+  // 首次发送消息时创建对话（添加到列表顶部）
+  const createConversationOnFirstMessage = (firstMessage: string): Conversation => {
+    return createConversation(firstMessage);
   };
 
   // 选择对话
@@ -108,6 +116,7 @@ export function useConversation() {
       error: state.error,
     })),
     createConversation,
+    createConversationOnFirstMessage,
     selectConversation,
     deleteConversation,
     updateConversation,

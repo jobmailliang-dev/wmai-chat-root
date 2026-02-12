@@ -54,15 +54,14 @@
     <!-- 错误提示 -->
     <div v-if="state.error" class="error-toast">
       {{ state.error }}
-      <button @click="state.error = null">×</button>
+      <button @click="emit('update-error', null)">×</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import MessageList from './MessageList.vue';
-import { useConversation } from '../hooks/useConversation';
 
 import type { Message } from '../types/chat';
 
@@ -74,6 +73,7 @@ interface Props {
     isStreaming: boolean;
     error: string | null;
   };
+  conversationTitle?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,9 +84,8 @@ const props = withDefaults(defineProps<Props>(), {
     isStreaming: false,
     error: null,
   }),
+  conversationTitle: '新对话',
 });
-
-const { currentConversation, updateConversation } = useConversation();
 
 // 使用 props 传入的状态
 const messages = computed(() => props.messages);
@@ -95,41 +94,58 @@ const state = computed(() => props.chatState);
 const inputMessage = ref('');
 const textareaRef = ref<HTMLTextAreaElement>();
 
+// 标题显示逻辑
 const currentTitle = computed(() => {
-  if (currentConversation.value) {
-    return currentConversation.value.title;
-  }
-  return '新对话';
+  return props.conversationTitle || '新对话';
 });
 
+// 是否可以发送
 const canSend = computed(() => {
   return inputMessage.value.trim() && !state.value.isLoading && !state.value.isStreaming;
 });
 
+// 发送消息
 const send = async () => {
   if (!canSend.value) return;
   const message = inputMessage.value.trim();
   emit('send-message', message);
+  // 如果还没有对话标题，用首条消息作为标题
+  if (props.conversationTitle === '新对话' || !props.conversationTitle) {
+    emit('update-title', message);
+  }
   inputMessage.value = '';
 };
 
-// 监听消息变化，更新对话信息
-watchEffect(() => {
-  const len = messages.value.length;
-  if (len > 0 && currentConversation.value) {
-    const lastMsg = messages.value[len - 1];
-    if (lastMsg.role === 'user') {
-      updateConversation(currentConversation.value.id, {
-        preview: lastMsg.content,
-        messageCount: len,
-      });
+// 聚焦输入框
+const focusInput = () => {
+  nextTick(() => {
+    textareaRef.value?.focus();
+  });
+};
+
+// 监听 clear-messages 事件，聚焦输入框
+watch(
+  () => props.messages.length,
+  (newLen, oldLen) => {
+    // 当消息从有变无（清空对话），聚焦输入框
+    if (newLen === 0 && oldLen > 0) {
+      focusInput();
+    }
+    // 当消息从无变有（首次发送消息），通知父组件更新标题
+    if (newLen > oldLen && props.conversationTitle === '新对话') {
+      const lastMsg = messages.value[newLen - 1];
+      if (lastMsg.role === 'user') {
+        emit('update-title', lastMsg.content);
+      }
     }
   }
-});
+);
 
 const emit = defineEmits<{
   (e: 'send-message', message: string): void;
   (e: 'clear-messages'): void;
+  (e: 'update-error', error: string | null): void;
+  (e: 'update-title', title: string): void;
 }>();
 
 // 自动调整高度
@@ -138,6 +154,11 @@ watch(inputMessage, () => {
     textareaRef.value.style.height = 'auto';
     textareaRef.value.style.height = Math.min(textareaRef.value.scrollHeight, 120) + 'px';
   }
+});
+
+// 暴露聚焦方法给父组件
+defineExpose({
+  focusInput,
 });
 </script>
 
