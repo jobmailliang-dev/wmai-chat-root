@@ -20,7 +20,7 @@ const routes = {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      'Connection': 'keep-alive', // 虽然是 keep-alive，但 res.end() 会结束当前响应块
       'Access-Control-Allow-Origin': '*'
     })
 
@@ -28,9 +28,14 @@ const routes = {
     setTimeout(() => sendSSE(res, 'content', `你好！我收到了: "${message}"`), 100)
     setTimeout(() => sendSSE(res, 'content', '这是一个模拟的 SSE 流式响应'), 300)
     setTimeout(() => sendSSE(res, 'content', 'MSW 拦截正常工作'), 500)
-    setTimeout(() => sendSSE(res, 'done', ''), 700)
+    
+    // 关键修复点：
+    setTimeout(() => {
+      sendSSE(res, 'done', '') // 发送业务上的结束标识（可选）
+      res.end()                // 真正关闭 HTTP 连接，触发前端 reader.read() 的 done: true
+      console.log(`[Mock] 响应已结束`)
+    }, 700)
   },
-
   '/api/health': (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
     res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }))

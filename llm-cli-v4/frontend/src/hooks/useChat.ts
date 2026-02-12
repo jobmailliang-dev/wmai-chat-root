@@ -1,5 +1,6 @@
 import { ref, reactive, computed } from 'vue';
 import type { Message, ThinkingLog, ChatState } from '../types/chat';
+import { streamRequest } from '../utils/streamRequest';
 
 export function useChat(baseUrl = 'http://localhost:8000') {
   const messages = ref<Message[]>([]);
@@ -12,7 +13,6 @@ export function useChat(baseUrl = 'http://localhost:8000') {
   const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 
   const addMessage = (role: Message['role'], content: string = '') => {
-    console.log("addMessage", content )
     const msg: Message = {
       id: generateId(),
       role,
@@ -23,6 +23,58 @@ export function useChat(baseUrl = 'http://localhost:8000') {
     };
     messages.value.push(msg);
     return msg.id;
+  };
+
+  // SSE 事件处理
+  const handleSSERecord = (eventType: string, data: string | object, msgId: string) => {
+    const lastMsg = messages.value.find(m => m.id === msgId);
+    if (!lastMsg) return;
+
+    // 将 data 转换为字符串
+    const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+
+    // 记录所有 thinking/tool_call/tool_result/tool_error 事件到日志
+    if (['thinking', 'tool_call', 'tool_result', 'tool_error'].includes(eventType)) {
+      lastMsg.thinkingLog.push({
+        timestamp: Date.now(),
+        eventType,
+        rawData: dataStr,
+      });
+      // 进入 thinking 状态
+      lastMsg.isThinking = true;
+    }
+    console.log('variable: ', eventType);
+    switch (eventType) {
+      case 'content':
+        // content 事件：累积内容，关闭 thinking 状态
+        lastMsg.isThinking = false;
+        lastMsg.content += dataStr;
+        break;
+
+      case 'thinking':
+        // thinking 事件：保持 thinking 状态
+        lastMsg.isThinking = true;
+        break;
+
+      case 'tool_call':
+      case 'tool_result':
+      case 'tool_error':
+        // 工具相关事件：保持 thinking 状态
+        lastMsg.isThinking = true;
+        break;
+
+      case 'done':
+        // 流结束：关闭 thinking 状态和流状态
+        lastMsg.isThinking = false;
+        state.isLoading = false;
+        state.isStreaming = false;
+        break;
+
+      case 'error':
+        lastMsg.isThinking = false;
+        lastMsg.content += `\n错误: ${dataStr}`;
+        break;
+    }
   };
 
   const streamMessage = async (message: string): Promise<void> => {
@@ -37,114 +89,31 @@ export function useChat(baseUrl = 'http://localhost:8000') {
     // 创建助手消息占位
     const assistantMsgId = addMessage('assistant');
 
-    try {
-      const encodedMessage = encodeURIComponent(message);
-      const response = await fetch(`${baseUrl}/api/chat/stream?message=${encodedMessage}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('无法读取响应流');
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-      // 在循环外部跟踪当前事件状态，避免重复保存
-      let currentEventType = '';
-      let currentData = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // 按行分割，处理 SSE 格式
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          console.log(line)
-          if (line.startsWith('event:')) {
-            // 保存上一个事件（如果有完整的数据）
-            if (currentEventType && currentData) {
-              handleSSERecord(currentEventType, currentData, assistantMsgId);
-            }
-            currentEventType = line.replace('event:', '').trim();
-            currentData = '';
-          } else if (line.startsWith('data:')) {
-            currentData += line.replace('data:', '').trim();
+    // 使用 streamRequest 工具类发起请求
+    await streamRequest(
+      '/api/chat/stream',
+      { message },
+      (event, data) => {
+        handleSSERecord(event, data, assistantMsgId);
+      },
+      {
+        method: 'GET',
+        baseUrl,
+        onError: (error) => {
+          state.error = error.message;
+          const lastMsg = messages.value.find(m => m.id === assistantMsgId);
+          if (lastMsg) {
+            lastMsg.content += `\n错误: ${error.message}`;
+            lastMsg.isThinking = false;
           }
-          // 忽略空行和其他行
+        },
+        onComplete: () => {
+          // 确保状态被重置
+          state.isLoading = false;
+          state.isStreaming = false;
         }
       }
-      console.log(111111)
-      // 流结束时保存最后一个事件（包括 done 事件）
-      if (currentEventType) {
-        handleSSERecord(currentEventType, currentData, assistantMsgId);
-      }
-    } catch (err) {
-      state.error = err instanceof Error ? err.message : '流式请求失败';
-      const lastMsg = messages.value.find(m => m.id === assistantMsgId);
-      if (lastMsg) {
-        lastMsg.content += `\n错误: ${state.error}`;
-        lastMsg.isThinking = false;
-      }
-    } finally {
-      state.isLoading = false;
-      state.isStreaming = false;
-    }
-  };
-
-  // SSE 事件处理
-  const handleSSERecord = (eventType: string, data: string, msgId: string) => {
-    const lastMsg = messages.value.find(m => m.id === msgId);
-    if (!lastMsg) return;
-
-    // 记录所有 thinking/tool_call/tool_result/tool_error 事件到日志
-    if (['thinking', 'tool_call', 'tool_result', 'tool_error'].includes(eventType)) {
-      lastMsg.thinkingLog.push({
-        timestamp: Date.now(),
-        eventType,
-        rawData: data,
-      });
-      // 进入 thinking 状态
-      lastMsg.isThinking = true;
-    }
-    console.log(eventType)
-    switch (eventType) {
-      case 'content':
-        // content 事件：累积内容，关闭 thinking 状态
-        lastMsg.isThinking = false;
-        lastMsg.content += data; // 累积内容，不清空
-        break;
-
-      case 'thinking':
-        // thinking 事件：保持 thinking 状态，content 累积不清空
-        lastMsg.isThinking = true;
-        break;
-
-      case 'tool_call':
-      case 'tool_result':
-      case 'tool_error':
-        // 工具相关事件：保持 thinking 状态，日志已记录
-        lastMsg.isThinking = true;
-        // content 保持累积，不清空
-        break;
-
-      case 'done':
-        // 流结束：关闭 thinking 状态和流状态
-        lastMsg.isThinking = false;
-        state.isLoading = false;
-        state.isStreaming = false;
-        break;
-
-      case 'error':
-        lastMsg.isThinking = false;
-        lastMsg.content += `\n错误: ${data}`;
-        break;
-    }
+    );
   };
 
   const clearMessages = () => {
