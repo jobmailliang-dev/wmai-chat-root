@@ -30,3 +30,4 @@ Desktop.ini
 *~
 open-agent/**
 *.db
+*/logs/**
