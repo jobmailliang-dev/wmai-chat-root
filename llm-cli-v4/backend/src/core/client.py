@@ -10,6 +10,9 @@ from src.adapters.base import LLMAdapter, LLMResponse
 from src.config.models import OpenAIConfig, QwenConfig, ToolsConfig
 from src.core.session import SessionManager
 from src.tools.registry import get_registry
+from src.utils.logging_web import get_request_logger
+
+_logger = get_request_logger("src.core.client")
 
 
 class LLMClient:
@@ -65,7 +68,6 @@ class LLMClient:
 	def _chat_with_tools(self, user_message: str) -> str:
 		"""带工具调用的对话。"""
 		from src.cli.output import print_thinking, print_message, print_tool_call, print_tool_result, print_tool_error,print_error
-
 		registry = get_registry()
 		tool_schemas = registry.get_all_schemas()
 		max_iterations = self.tools_config.max_tool_calls
@@ -182,6 +184,7 @@ class LLMClient:
 				else:
 					# 最终响应
 					final_response = assistant_content
+					print_message(final_response)
 					self.session.add_assistant(final_response)
 					break
 
