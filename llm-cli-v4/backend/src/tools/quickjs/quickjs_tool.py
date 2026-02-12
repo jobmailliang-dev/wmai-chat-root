@@ -33,7 +33,7 @@ class QuickJSTool(BaseTool):
     def _register_console_functions(self) -> None:
         """注册 console 和工具调用函数。"""
         ctx = self._get_context()
-        apply_console(ctx, self._console_output)
+        apply_console(ctx, self._console_output, tool_name=self.name)
         apply_call_tool(ctx)
 
     def _get_js_type(self, value: Any) -> str:

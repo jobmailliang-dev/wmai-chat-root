@@ -1,15 +1,19 @@
 """工具管理 API"""
 
+import asyncio
 import json
 import time
+from typing import AsyncGenerator
 
 from fastapi import APIRouter, Query
+from fastapi.responses import StreamingResponse
 
 from src.api.models import ApiResponse
 from src.modules import ToolService, get_injector
 from src.modules.base import ValidException, ApiException
 from src.modules.tools.dtos import ToolDto
 from src.utils.logging_web import get_request_logger
+from src.utils.stream_writer_util import create_queue_task, send_queue
 
 router = APIRouter(prefix="/api/tools", tags=["tools"])
 
@@ -160,3 +164,121 @@ return execute(context);
             "result": result,
             "execution_time": f"{(time.time() - start_time):.3f}s"
         })
+
+
+async def _execute_tool_stream(id: int, params: dict) -> None:
+    """执行工具并流式发送日志和结果。
+
+    Args:
+        id: 工具 ID
+        params: 执行参数
+    """
+    from src.tools.registry import get_registry
+
+    try:
+        # 1. 获取工具定义
+        tool_data: ToolDto = _tool_service.get_one(id)
+        if not tool_data:
+            send_queue({
+                "type": "error",
+                "message": "工具不存在"
+            }, "error")
+            return
+
+        if not tool_data.is_active:
+            send_queue({
+                "type": "error",
+                "message": "工具未启用"
+            }, "error")
+            return
+
+        send_queue({
+            "type": "status",
+            "message": f"开始执行工具: {tool_data.name}",
+            "tool_name": tool_data.name
+        }, "status")
+
+        # 2. 组装 JavaScript 脚本
+        if "function execute" in tool_data.code:
+            script = f"""\
+const context = {{
+  args: {json.dumps(params, ensure_ascii=False)}
+}};
+{tool_data.code}
+return execute(context);
+"""
+        else:
+            script = tool_data.code
+
+        # 3. 调用 quickjs_tool 执行脚本
+        registry = get_registry()
+
+        _logger.info(f"[tool_execute_stream] tool={tool_data.name}")
+
+        # 发送开始执行信号
+        send_queue({
+            "type": "start",
+            "tool_name": tool_data.name,
+            "script": script[:500] + "..." if len(script) > 500 else script
+        }, "start")
+
+        try:
+            result = registry.execute("quickjs", code=script)
+
+            # 解析结果
+            try:
+                result_data = json.loads(result)
+                result_value = result_data.get("result", result)
+            except (json.JSONDecodeError, TypeError):
+                result_value = result
+
+            # 发送完成信号
+            send_queue({
+                "type": "done",
+                "tool_name": tool_data.name,
+                "result": result_value,
+                "execution_time": 0  # 简化，不计算精确时间
+            }, "done")
+
+        except Exception as e:
+            _logger.error(f"[tool_execute_stream_error] tool={tool_data.name}, error={str(e)}")
+            send_queue({
+                "type": "error",
+                "tool_name": tool_data.name,
+                "message": f"执行失败: {str(e)}"
+            }, "error")
+
+    except Exception as e:
+        _logger.error(f"[tool_execute_stream_error] unexpected error: {str(e)}")
+        send_queue({
+            "type": "error",
+            "message": f"内部错误: {str(e)}"
+        }, "error")
+
+
+@router.post("/execute/stream")
+async def execute_tool_stream(
+    id: int = Query(..., description="Tool ID"),
+    request: dict = None
+):
+    """执行工具并通过 SSE 流式返回日志和结果。
+
+    支持实时推送 console.log/warn/error 输出到前端。
+    """
+    params = request.get("params", {}) if request else {}
+
+    # 创建异步任务
+    queue = create_queue_task(_execute_tool_stream, id, params)
+
+    async def generate_stream() -> AsyncGenerator[str, None]:
+        """从队列中读取数据并生成 SSE 事件。"""
+        while True:
+            chunk = await queue.get()
+            if chunk is None:
+                break
+            yield chunk
+
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream; charset=utf-8"
+    )
