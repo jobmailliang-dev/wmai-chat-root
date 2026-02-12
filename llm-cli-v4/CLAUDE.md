@@ -127,6 +127,67 @@ cd frontend && npm run dev
 - **组件命名**：PascalCase (如 `ChatWindow.vue`)
 - **导入排序**：Vue API → 第三方 → 本地导入
 
+### Dialog 组件规范
+
+Dialog/Modal 弹窗组件统一使用以下样式规范：
+
+#### 1. 模板结构
+```vue
+<Teleport to="body">
+  <Transition name="dialog">
+    <div v-if="visible" class="dialog-overlay" @click="handleCancel">
+      <div class="dialog-container" @click.stop>
+        <!-- 标题栏 -->
+        <div class="dialog-header">
+          <h3 class="dialog-title">{{ title }}</h3>
+          <button class="close-btn" @click="handleCancel">×</button>
+        </div>
+        <!-- 内容区/输入框 -->
+        <div class="dialog-content">...</div>
+        <!-- 操作栏 -->
+        <div class="dialog-actions">...</div>
+      </div>
+    </div>
+  </Transition>
+</Teleport>
+```
+
+#### 2. 样式变量 (浅色主题)
+```css
+.dialog-overlay {
+  --background-white: #ffffff;
+  --text-primary: #1f1f1f;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --text-tertiary: #8c8c8c;
+  --fill-gray-light: #f5f5f5;
+  --fill-gray-hover: #e8e8e8;
+  --border-light: #e5e5e5;
+  --icon-tertiary: #8c8c8c;
+  --Button-primary-blue: #007aff;
+  --Button-primary-red: #ff4d4f;
+}
+```
+
+#### 3. 关键样式规格
+| 属性 | 值 | 说明 |
+|------|-----|------|
+| 容器宽度 | 360-400px | 标准宽度 |
+| 圆角 | 20px | 大圆角 |
+| 阴影 | 0 24px 48px rgba(0,0,0,0.15) | 柔和阴影 |
+| 遮罩 | rgba(0,0,0,0.4) + blur(4px) | 半透明磨砂 |
+| 按钮高度 | 36px | 固定高度 |
+| 按钮圆角 | 8px | 小圆角 |
+| 过渡动画 | cubic-bezier(0.34,1.56,0.64,1) | 弹性效果 |
+
+#### 4. 按钮类型
+- **确认/主要按钮**：蓝色背景 + 白色文字
+- **取消/次要按钮**：透明背景 + 边框
+- **删除/危险按钮**：红色背景 + 白色文字
+
+#### 5. 组件文件
+- `ConfirmDialog.vue` - 确认对话框
+- `RenameDialog.vue` - 重命名对话框
+
 ### 模块导出规范
 
 后端模块的公共接口应在 `src/*/__init__.py` 中导出。

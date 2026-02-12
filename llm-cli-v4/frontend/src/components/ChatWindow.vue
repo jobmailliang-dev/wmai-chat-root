@@ -3,6 +3,17 @@
     <!-- 聊天头部 -->
     <div class="chat-header">
       <div class="header-left">
+        <!-- 侧栏开关按钮 -->
+        <button
+          v-if="showSidebarToggle"
+          @click="handleToggleSidebar"
+          class="menu-btn"
+          :title="sidebarCollapsed ? '打开侧边栏' : '关闭侧边栏'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M3 5.25C3 4.55964 3.55964 4 4.25 4H16.25C16.9404 4 17.5 4.55964 17.5 5.25C17.5 5.94036 16.9404 6.5 16.25 6.5H4.25C3.55964 6.5 3 5.94036 3 5.25ZM3 12C3 11.3096 3.55964 10.75 4.25 10.75H19.75C20.4404 10.75 21 11.3096 21 12C21 12.6904 20.4404 13.25 19.75 13.25H4.25C3.55964 13.25 3 12.6904 3 12ZM4.25 17.5C3.55964 17.5 3 18.0596 3 18.75C3 19.4404 3.55964 20 4.25 20H16.25C16.9404 20 17.5 19.4404 17.5 18.75C17.5 18.0596 16.9404 17.5 16.25 17.5H4.25Z" fill="currentColor"></path>
+          </svg>
+        </button>
         <h2 class="chat-title">{{ currentTitle }}</h2>
         <span v-if="state.isStreaming" class="streaming-badge">
           <span class="dot"></span>
@@ -10,11 +21,11 @@
         </span>
       </div>
       <div class="header-right">
-        <button @click="emit('clear-messages')" class="header-btn" title="清空对话">
+        <!-- <button @click="emit('clear-messages')" class="header-btn" title="清空对话">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
-        </button>
+        </button> -->
       </div>
     </div>
 
@@ -60,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import MessageList from './MessageList.vue';
 
 import type { Message } from '../types/chat';
@@ -74,6 +85,7 @@ interface Props {
     error: string | null;
   };
   conversationTitle?: string;
+  sidebarCollapsed?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -85,6 +97,19 @@ const props = withDefaults(defineProps<Props>(), {
     error: null,
   }),
   conversationTitle: '新对话',
+  sidebarCollapsed: false,
+});
+
+// 响应式断点
+const MOBILE_BREAKPOINT = 768;
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024);
+const isMobile = computed(() => windowWidth.value < MOBILE_BREAKPOINT);
+
+// 是否显示侧栏开关按钮
+const showSidebarToggle = computed(() => {
+  // 移动端始终显示（用于打开/关闭侧栏）
+  // 桌面端折叠状态显示
+  return isMobile.value || props.sidebarCollapsed;
 });
 
 // 使用 props 传入的状态
@@ -104,6 +129,19 @@ const canSend = computed(() => {
   return inputMessage.value.trim() && !state.value.isLoading && !state.value.isStreaming;
 });
 
+// 更新窗口宽度
+const handleResize = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
 // 发送消息
 const send = async () => {
   if (!canSend.value) return;
@@ -115,6 +153,13 @@ const send = async () => {
   }
   inputMessage.value = '';
 };
+
+// 切换侧栏
+const handleToggleSidebar = () => {
+  emit('toggle-sidebar');
+};
+
+// 聚焦输入框
 
 // 聚焦输入框
 const focusInput = () => {
@@ -146,6 +191,7 @@ const emit = defineEmits<{
   (e: 'clear-messages'): void;
   (e: 'update-error', error: string | null): void;
   (e: 'update-title', title: string): void;
+  (e: 'toggle-sidebar'): void;
 }>();
 
 // 自动调整高度
@@ -176,8 +222,8 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #f0f0f0;
   background: #fff;
+  height: 56px;
 }
 
 .header-left {
@@ -230,6 +276,26 @@ defineExpose({
 .header-btn:hover {
   background: #f5f5f5;
   border-color: #d0d0d0;
+}
+
+.menu-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.menu-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #333;
 }
 
 /* 欢迎页面 */

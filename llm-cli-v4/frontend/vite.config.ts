@@ -11,17 +11,9 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: true,
       proxy: isMock ? {
-        '/api/chat/stream': {
+        '/api': {
           target: 'http://localhost:3002',
           ws: true,
-          changeOrigin: true
-        },
-        '/api/health': {
-          target: 'http://localhost:3002',
-          changeOrigin: true
-        },
-        '/api/tools': {
-          target: 'http://localhost:3002',
           changeOrigin: true
         }
       } : {}

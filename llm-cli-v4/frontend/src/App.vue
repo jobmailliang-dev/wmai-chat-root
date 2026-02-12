@@ -3,9 +3,13 @@
     <Sidebar
       :conversations="conversations"
       :currentConversationId="currentConversationId"
+      :isLoading="isLoading"
+      :collapsed="sidebarCollapsed"
       @new-chat="handleNewChat"
       @select="handleSelect"
       @delete="handleDelete"
+      @rename="handleRename"
+      @toggle-sidebar="toggleSidebar"
     />
     <ChatWindow
       ref="chatWindowRef"
@@ -13,6 +17,8 @@
       :messages="messages"
       :chatState="chatState"
       :conversationTitle="conversationTitle"
+      :sidebarCollapsed="sidebarCollapsed"
+      @toggle-sidebar="toggleSidebar"
       @send-message="handleSendMessage"
       @clear-messages="clearMessages"
       @update-error="handleUpdateError"
@@ -22,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import Sidebar from './components/Sidebar.vue';
 import ChatWindow from './components/ChatWindow.vue';
 import { useChat } from './hooks/useChat';
@@ -31,29 +37,47 @@ import { useConversation } from './hooks/useConversation';
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const chatWindowRef = ref<InstanceType<typeof ChatWindow> | null>(null);
 
+// 侧栏折叠状态
+const sidebarCollapsed = ref(false);
+
 const { messages, state: chatState, streamMessage, clearMessages } = useChat(baseUrl);
 const {
   conversations,
   currentConversationId,
+  isLoading,
   createConversationOnFirstMessage,
   selectConversation,
+  resetCurrentConversation,
   deleteConversation,
   updateConversation,
+  loadConversations,
 } = useConversation();
 
 // 当前对话标题
 const conversationTitle = computed(() => {
   if (currentConversationId.value && conversations.value.length > 0) {
-    const conv = conversations.value.find(c => c.id === currentConversationId.value);
+    const conv = conversations.value.find((c) => c.id === currentConversationId.value);
     if (conv) return conv.title;
   }
   return '新对话';
 });
 
+// 页面加载时获取对话列表
+onMounted(() => {
+  loadConversations();
+});
+
+// 切换侧栏折叠状态
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+};
+
 const handleNewChat = () => {
   // 只清空消息，不创建对话
   clearMessages();
-  // 通过 ref 调用子组件的聚焦方法
+  // 重置当前对话ID，这样发送消息时会创建新对话
+  resetCurrentConversation();
+  // 聚焦输入框
   chatWindowRef.value?.focusInput();
 };
 
@@ -67,10 +91,15 @@ const handleDelete = (id: string) => {
   deleteConversation(id);
 };
 
+const handleRename = (id: string, newTitle: string) => {
+  const displayTitle = newTitle.length > 20 ? newTitle.substring(0, 20) + '...' : newTitle;
+  updateConversation(id, { title: displayTitle });
+};
+
 const handleSendMessage = async (message: string) => {
   // 如果没有当前对话，首次发送消息时创建对话
   if (!currentConversationId.value) {
-    createConversationOnFirstMessage(message);
+    await createConversationOnFirstMessage(message);
   }
   await streamMessage(message);
 };

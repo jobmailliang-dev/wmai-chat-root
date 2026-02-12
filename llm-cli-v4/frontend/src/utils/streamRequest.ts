@@ -80,7 +80,6 @@ export async function streamRequest<T = any>(
 
       while (true) {
         const { done, value } = await reader.read();
-        console.log(done, value)
         if (done) break;
 
         // 解码数据块并添加到缓冲区
