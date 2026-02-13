@@ -35,5 +35,3 @@ open-agent/**
 /.zcf/
 /.spec-workflow/
 /.playwright-mcp/
-/frontend-master/
-/backend-master/

@@ -1,0 +1,6 @@
+[submodule "backend-master.git"]
+	path = backend-master
+	url = https://github.com/jobmailliang-dev/backend-master.git
+[submodule "frontend-master.git"]
+	path = frontend-master
+	url = https://github.com/jobmailliang-dev/frontend-master.git
