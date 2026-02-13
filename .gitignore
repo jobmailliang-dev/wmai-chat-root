@@ -31,3 +31,9 @@ Desktop.ini
 open-agent/**
 *.db
 */logs/**
+/node_modules/
+/.zcf/
+/.spec-workflow/
+/.playwright-mcp/
+/frontend-master/
+/backend-master/
