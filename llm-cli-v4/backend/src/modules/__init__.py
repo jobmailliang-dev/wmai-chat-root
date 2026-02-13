@@ -6,6 +6,14 @@ from injector import Binder
 from .datasource import Connection, DatabaseManager
 from .test import Test, TestService, TestDao
 from .tools import Tool, ToolService, ToolDao
+from .conversations import (
+    Conversation,
+    Message,
+    ConversationDao,
+    MessageDao,
+    ConversationService,
+    MessageService
+)
 
 
 def _init_database():
@@ -59,11 +67,45 @@ class ToolModule(Module):
         )
 
 
+class ConversationModule(Module):
+    """Conversation 模块配置"""
+
+    def configure(self, binder: Binder):
+        # DAO - 单例
+        binder.bind(
+            ConversationDao,
+            scope=singleton
+        )
+        # Service - 单例
+        binder.bind(
+            ConversationService,
+            scope=singleton
+        )
+
+
+class MessageModule(Module):
+    """Message 模块配置"""
+
+    def configure(self, binder: Binder):
+        # DAO - 单例
+        binder.bind(
+            MessageDao,
+            scope=singleton
+        )
+        # Service - 单例
+        binder.bind(
+            MessageService,
+            scope=singleton
+        )
+
+
 # 创建 Injector 实例
 injector = Injector([
     DatabaseModule(),
     TestModule(),
-    ToolModule()
+    ToolModule(),
+    ConversationModule(),
+    MessageModule()
 ])
 
 # 便捷函数
@@ -87,6 +129,12 @@ __all__ = [
     "Tool",
     "ToolService",
     "ToolDao",
+    "Conversation",
+    "Message",
+    "ConversationDao",
+    "MessageDao",
+    "ConversationService",
+    "MessageService",
     "Connection",
     "DatabaseManager"
 ]

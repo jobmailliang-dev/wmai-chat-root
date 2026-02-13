@@ -32,6 +32,7 @@ def run_web():
     from fastapi import FastAPI
     from fastapi.staticfiles import StaticFiles
     from src.api import chat_router, health_router, test_router, tools_router
+    from src.api.conversations import router as conversations_router
     from src.utils.logging_web import setup_logging
     from src.web.cors import setup_cors
     from src.web.logging_middleware import RequestLoggingMiddleware
@@ -61,6 +62,7 @@ def run_web():
     app.include_router(health_router)
     app.include_router(chat_router)
     app.include_router(test_router)
+    app.include_router(conversations_router)
 
     # 静态文件服务（前端构建产物）
     static_dir = PROJECT_ROOT / "backend" / "static"
