@@ -38,8 +38,6 @@ logger.debug("Debug message")
 logger.warning("Warning message")
 logger.error("Error message")
 
-# 安静模式
-logger.set_quiet(True)  # 静默，不输出 info/debug
 ```
 
 ### 日志级别
